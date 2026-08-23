@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from src.core.constants import Constants
 from src.models.claude import ClaudeMessagesRequest, ClaudeMessage
 from src.core.config import config
@@ -112,7 +112,10 @@ def convert_claude_to_openai(
         "stream": claude_request.stream,
     }
     logger.debug(
-        f"Converted Claude request to OpenAI format: {json.dumps(openai_request, indent=2, ensure_ascii=False)}"
+        "Converted Claude request to OpenAI format: model=%s, messages_count=%d, stream=%s",
+        openai_model,
+        len(openai_messages),
+        claude_request.stream,
     )
     # Add optional parameters
     if claude_request.stop_sequences:

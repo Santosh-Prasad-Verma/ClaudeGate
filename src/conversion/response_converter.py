@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from fastapi import HTTPException, Request
@@ -205,6 +206,9 @@ async def convert_openai_streaming_to_claude(
                             final_stop_reason = Constants.STOP_END_TURN
                         break
 
+    except asyncio.CancelledError:
+        logger.info("Streaming response cancelled (client disconnected)")
+        return
     except Exception as e:
         # Handle any streaming errors gracefully
         logger.error(f"Streaming error: {e}")
@@ -394,6 +398,11 @@ async def convert_openai_streaming_to_claude_with_cancellation(
             return
         else:
             raise
+    except asyncio.CancelledError:
+        logger.info(f"Streaming request {request_id} cancelled (client disconnected)")
+        if openai_client:
+            openai_client.cancel_request(request_id)
+        return
     except Exception as e:
         # Handle any streaming errors gracefully
         logger.error(f"Streaming error: {e}")

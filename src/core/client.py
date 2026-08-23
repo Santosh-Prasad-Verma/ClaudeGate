@@ -1,10 +1,12 @@
 import asyncio
 import json
+import logging
 from fastapi import HTTPException
 from typing import Optional, AsyncGenerator, Dict, Any
 from openai import AsyncOpenAI, AsyncAzureOpenAI
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from openai._exceptions import APIError, RateLimitError, AuthenticationError, BadRequestError
+
+logger = logging.getLogger(__name__)
 
 class OpenAIClient:
     """Async OpenAI client with cancellation support."""
@@ -73,13 +75,17 @@ class OpenAIClient:
             cancel_event = asyncio.Event()
             self.active_requests[request_id] = cancel_event
         
+        completion_task = None
+        cancel_task = None
         try:
             # Create task that can be cancelled with retry
             async def _create_with_retry():
+                last_err = None
                 for attempt in range(4):
                     try:
                         return await self.client.chat.completions.create(**request)
                     except Exception as err:
+                        last_err = err
                         status = getattr(err, 'status_code', None)
                         if status in (429, 500, 502, 503, 504) or 'overload' in str(err).lower() or 'concurrency' in str(err).lower():
                             if attempt < 3:
@@ -92,9 +98,12 @@ class OpenAIClient:
                                 fallback_req["model"] = self.fallback_model
                             try:
                                 return await self.fallback_client.chat.completions.create(**fallback_req)
-                            except Exception:
-                                pass
+                            except Exception as fb_err:
+                                logger.debug("Fallback attempt failed: %s", fb_err)
                         raise
+                if last_err:
+                    raise last_err
+                raise RuntimeError("Failed to complete request after retries")
 
             completion_task = asyncio.create_task(_create_with_retry())
             
@@ -111,12 +120,16 @@ class OpenAIClient:
                     task.cancel()
                     try:
                         await task
-                    except asyncio.CancelledError:
+                    except (asyncio.CancelledError, Exception):
                         pass
                 
                 # Check if request was cancelled
                 if cancel_task in done:
                     completion_task.cancel()
+                    try:
+                        await completion_task
+                    except (asyncio.CancelledError, Exception):
+                        pass
                     raise HTTPException(status_code=499, detail="Request cancelled by client")
                 
                 completion = await completion_task
@@ -126,6 +139,22 @@ class OpenAIClient:
             # Convert to dict format that matches the original interface
             return completion.model_dump()
         
+        except HTTPException:
+            raise
+        except asyncio.CancelledError:
+            if completion_task and not completion_task.done():
+                completion_task.cancel()
+                try:
+                    await completion_task
+                except (asyncio.CancelledError, Exception):
+                    pass
+            if cancel_task and not cancel_task.done():
+                cancel_task.cancel()
+                try:
+                    await cancel_task
+                except (asyncio.CancelledError, Exception):
+                    pass
+            raise
         except AuthenticationError as e:
             raise HTTPException(status_code=401, detail=self.classify_openai_error(str(e)))
         except RateLimitError as e:
@@ -151,6 +180,7 @@ class OpenAIClient:
             cancel_event = asyncio.Event()
             self.active_requests[request_id] = cancel_event
         
+        streaming_completion = None
         try:
             # Ensure stream is enabled
             request["stream"] = True
@@ -159,7 +189,6 @@ class OpenAIClient:
             request["stream_options"]["include_usage"] = True
             
             # Create the streaming completion with automatic retry and fallback
-            streaming_completion = None
             last_error = None
             for attempt in range(6):
                 try:
@@ -208,6 +237,22 @@ class OpenAIClient:
             # Signal end of stream
             yield "data: [DONE]"
                 
+        except asyncio.CancelledError:
+            # When generator is cancelled / closed
+            if streaming_completion is not None:
+                if hasattr(streaming_completion, "close"):
+                    try:
+                        res = streaming_completion.close()
+                        if asyncio.iscoroutine(res):
+                            await res
+                    except Exception as e:
+                        logger.debug("Failed closing stream during cancellation: %s", e)
+                elif hasattr(streaming_completion, "aclose"):
+                    try:
+                        await streaming_completion.aclose()
+                    except Exception as e:
+                        logger.debug("Failed aclosing stream during cancellation: %s", e)
+            raise
         except Exception as e:
             # NEVER raise from inside an async generator used by StreamingResponse.
             # Yield an error marker that response_converter will handle gracefully.
@@ -215,6 +260,19 @@ class OpenAIClient:
             yield f"ERROR::{status}::{self.classify_openai_error(str(e))}"
         
         finally:
+            if streaming_completion is not None:
+                if hasattr(streaming_completion, "close"):
+                    try:
+                        res = streaming_completion.close()
+                        if asyncio.iscoroutine(res):
+                            await res
+                    except Exception as e:
+                        logger.debug("Failed closing stream in finally: %s", e)
+                elif hasattr(streaming_completion, "aclose"):
+                    try:
+                        await streaming_completion.aclose()
+                    except Exception as e:
+                        logger.debug("Failed aclosing stream in finally: %s", e)
             # Clean up active request tracking
             if request_id and request_id in self.active_requests:
                 del self.active_requests[request_id]
@@ -243,7 +301,11 @@ class OpenAIClient:
         if "billing" in error_str or "payment" in error_str:
             return "Billing issue. Please check your OpenAI account billing status."
         
-        # Default: return original message
+        # Connection and network issues
+        if "connect" in error_str or "timeout" in error_str or "unreachable" in error_str:
+            return "Unable to reach upstream provider. Please check network connectivity and base URL."
+
+        # Default: return sanitized string
         return str(error_detail)
     
     def cancel_request(self, request_id: str) -> bool:

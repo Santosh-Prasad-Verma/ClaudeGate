@@ -4,7 +4,7 @@ from src.api.endpoints import router as api_router
 import uvicorn
 import sys
 from src.core.config import config
-from src.cli import BANNER
+from src.core.constants import BANNER
 
 app = FastAPI(
     title="ClaudeGate",

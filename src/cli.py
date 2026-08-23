@@ -5,20 +5,10 @@ import sys
 import shutil
 import argparse
 import asyncio
-from typing import Optional
+import re
 import httpx
 from src.core.config import server_dir, config
-
-BANNER = r"""
-   _____ _                 _       _____       _       
-  / ____| |               | |     / ____|     | |      
- | |    | | __ _ _   _  __| | ___| |  __  __ _| |_ ___ 
- | |    | |/ _` | | | |/ _` |/ _ \ | |_ |/ _` | __/ _ \
- | |____| | (_| | |_| | (_| |  __/ |__| | (_| | ||  __/
-  \_____|_|\__,_|\__,_|\__,_|\___|\_____|\__,_|\__\___|
-                                                       
-  🔓 Connect Any AI Model to Claude Code CLI / Anthropic SDK
-"""
+from src.core.constants import BANNER
 
 def print_banner() -> None:
     """Print the ASCII startup banner."""
@@ -57,8 +47,6 @@ async def test_upstream_connection() -> bool:
     except Exception as e:
         print(f"\033[91m❌ Failed to connect to upstream: {e}\033[0m")
         return False
-
-import re
 
 def sanitize_env_value(val: str) -> str:
     """Sanitize user input to prevent environment variable and INI file injection."""
@@ -113,6 +101,10 @@ def run_interactive_setup() -> None:
         preset_path = os.path.realpath(os.path.join(presets_dir, preset_file))
         if preset_path.startswith(presets_dir) and os.path.exists(preset_path):
             shutil.copy(preset_path, target_env)
+            try:
+                os.chmod(target_env, 0o600)
+            except OSError:
+                pass
             print(f"\n✅ Applied preset: {preset_file}")
         else:
             print(f"❌ Preset file {preset_file} not found.")
@@ -140,6 +132,10 @@ def run_interactive_setup() -> None:
                 content = content.replace('OPENAI_API_KEY="your-api-key-here"', f'OPENAI_API_KEY="{api_key}"')
                 with open(target_env, "w", encoding="utf-8") as f:
                     f.write(content)
+                try:
+                    os.chmod(target_env, 0o600)
+                except OSError:
+                    pass
                 print("✅ API key successfully configured in .env.")
     else:
         # Manual flow with input sanitization
@@ -167,6 +163,10 @@ ALLOW_ANONYMOUS_ACCESS="false"
 """
         with open(target_env, "w", encoding="utf-8") as f:
             f.write(env_content)
+        try:
+            os.chmod(target_env, 0o600)
+        except OSError:
+            pass
         print("✅ Custom configuration saved to .env.")
 
     print("\n🎉 Setup complete! You can test your connection with:\n   python start_proxy.py --test\n")
@@ -182,6 +182,10 @@ def apply_preset(preset_name: str) -> None:
     
     if preset_path.startswith(presets_dir) and os.path.exists(preset_path):
         shutil.copy(preset_path, target_env)
+        try:
+            os.chmod(target_env, 0o600)
+        except OSError:
+            pass
         print(f"✅ Loaded preset '{safe_name}' into .env.")
         print("👉 Remember to edit .env and insert your API key if required.")
     else:

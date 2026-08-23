@@ -96,7 +96,7 @@ async def validate_api_key(
     # Rate limiting check per client
     rate_key = client_api_key or client_ip
     if not await rate_limiter.is_allowed(rate_key):
-        logger.warning(f"Rate limit exceeded for client {rate_key[:16]}...")
+        logger.warning("Rate limit exceeded for client IP: %s", client_ip)
         raise HTTPException(
             status_code=429,
             detail="Rate limit exceeded. Please slow down your requests.",
@@ -110,13 +110,13 @@ async def create_message(
     _: None = Depends(validate_api_key),
 ):
     async with concurrency_semaphore:
+        request_id = str(uuid.uuid4())
         try:
             logger.debug(
-                f"Processing Claude request: model={request.model}, stream={request.stream}"
+                "Processing Claude request: model=%s, stream=%s",
+                request.model,
+                request.stream,
             )
-
-            # Generate unique request ID for cancellation tracking
-            request_id = str(uuid.uuid4())
 
             # Convert Claude request to OpenAI format
             openai_request = convert_claude_to_openai(request, model_manager)
@@ -148,6 +148,18 @@ async def create_message(
                         },
                     )
                 except HTTPException as e:
+                    if e.status_code == 499:
+                        logger.info(f"Streaming request {request_id} cancelled by client")
+                        return JSONResponse(
+                            status_code=499,
+                            content={
+                                "type": "error",
+                                "error": {
+                                    "type": "cancelled",
+                                    "message": "Request cancelled by client",
+                                },
+                            },
+                        )
                     logger.error(f"Streaming error: {e.detail}")
                     error_message = openai_client.classify_openai_error(e.detail)
                     error_response = {
@@ -164,8 +176,32 @@ async def create_message(
                     openai_response, request
                 )
                 return claude_response
-        except HTTPException:
+        except HTTPException as e:
+            if e.status_code == 499:
+                logger.info(f"Request {request_id} was cancelled by client")
+                return JSONResponse(
+                    status_code=499,
+                    content={
+                        "type": "error",
+                        "error": {
+                            "type": "cancelled",
+                            "message": "Request cancelled by client",
+                        },
+                    },
+                )
             raise
+        except asyncio.CancelledError:
+            logger.info(f"Request {request_id} cancelled due to client disconnect")
+            return JSONResponse(
+                status_code=499,
+                content={
+                    "type": "error",
+                    "error": {
+                        "type": "cancelled",
+                        "message": "Request cancelled by client",
+                    },
+                },
+            )
         except Exception as e:
             logger.error(f"Unexpected error processing request: {e}")
             error_message = openai_client.classify_openai_error(str(e))

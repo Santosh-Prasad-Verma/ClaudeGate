@@ -27,3 +27,15 @@ class Constants:
     
     DELTA_TEXT = "text_delta"
     DELTA_INPUT_JSON = "input_json_delta"
+
+
+BANNER = r"""
+   _____ _                 _       _____       _       
+  / ____| |               | |     / ____|     | |      
+ | |    | | __ _ _   _  __| | ___| |  __  __ _| |_ ___ 
+ | |    | |/ _` | | | |/ _` |/ _ \ | |_ |/ _` | __/ _ \
+ | |____| | (_| | |_| | (_| |  __/ |__| | (_| | ||  __/
+  \_____|_|\__,_|\__,_|\__,_|\___|\_____|\__,_|\__\___|
+                                                       
+  🔓 Connect Any AI Model to Claude Code CLI / Anthropic SDK
+"""
