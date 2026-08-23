@@ -1,8 +1,6 @@
-import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.core.client import OpenAIClient
-from openai._exceptions import APIError
 
 
 def test_non_streaming_fallback_when_primary_fails():
