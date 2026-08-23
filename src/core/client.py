@@ -1,0 +1,254 @@
+import asyncio
+import json
+from fastapi import HTTPException
+from typing import Optional, AsyncGenerator, Dict, Any
+from openai import AsyncOpenAI, AsyncAzureOpenAI
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from openai._exceptions import APIError, RateLimitError, AuthenticationError, BadRequestError
+
+class OpenAIClient:
+    """Async OpenAI client with cancellation support."""
+    
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str,
+        timeout: int = 90,
+        api_version: Optional[str] = None,
+        custom_headers: Optional[Dict[str, str]] = None,
+        fallback_base_url: Optional[str] = None,
+        fallback_api_key: Optional[str] = None,
+        fallback_model: Optional[str] = None,
+    ):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.custom_headers = custom_headers or {}
+        self.fallback_base_url = fallback_base_url
+        self.fallback_api_key = fallback_api_key
+        self.fallback_model = fallback_model
+        
+        # Prepare default headers
+        default_headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "claudegate/1.0.0"
+        }
+        
+        # Merge custom headers with default headers
+        all_headers = {**default_headers, **self.custom_headers}
+        
+        # Detect if using Azure and instantiate the appropriate client
+        if api_version:
+            self.client = AsyncAzureOpenAI(
+                api_key=api_key,
+                azure_endpoint=base_url,
+                api_version=api_version,
+                timeout=timeout,
+                default_headers=all_headers
+            )
+        else:
+            self.client = AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                default_headers=all_headers
+            )
+
+        # Fallback client if configured
+        self.fallback_client = None
+        if self.fallback_base_url and self.fallback_api_key:
+            self.fallback_client = AsyncOpenAI(
+                api_key=self.fallback_api_key,
+                base_url=self.fallback_base_url,
+                timeout=timeout,
+                default_headers=all_headers
+            )
+
+        self.active_requests: Dict[str, asyncio.Event] = {}
+    
+    async def create_chat_completion(self, request: Dict[str, Any], request_id: Optional[str] = None) -> Dict[str, Any]:
+        """Send chat completion to OpenAI API with cancellation and automatic failover support."""
+        
+        # Create cancellation token if request_id provided
+        if request_id:
+            cancel_event = asyncio.Event()
+            self.active_requests[request_id] = cancel_event
+        
+        try:
+            # Create task that can be cancelled with retry
+            async def _create_with_retry():
+                for attempt in range(4):
+                    try:
+                        return await self.client.chat.completions.create(**request)
+                    except Exception as err:
+                        status = getattr(err, 'status_code', None)
+                        if status in (429, 500, 502, 503, 504) or 'overload' in str(err).lower() or 'concurrency' in str(err).lower():
+                            if attempt < 3:
+                                await asyncio.sleep(1.5 * (attempt + 1))
+                                continue
+                        # Try fallback provider if primary fails
+                        if self.fallback_client:
+                            fallback_req = dict(request)
+                            if self.fallback_model:
+                                fallback_req["model"] = self.fallback_model
+                            try:
+                                return await self.fallback_client.chat.completions.create(**fallback_req)
+                            except Exception:
+                                pass
+                        raise
+
+            completion_task = asyncio.create_task(_create_with_retry())
+            
+            if request_id:
+                # Wait for either completion or cancellation
+                cancel_task = asyncio.create_task(cancel_event.wait())
+                done, pending = await asyncio.wait(
+                    [completion_task, cancel_task],
+                    return_when=asyncio.FIRST_COMPLETED
+                )
+                
+                # Cancel pending tasks
+                for task in pending:
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+                
+                # Check if request was cancelled
+                if cancel_task in done:
+                    completion_task.cancel()
+                    raise HTTPException(status_code=499, detail="Request cancelled by client")
+                
+                completion = await completion_task
+            else:
+                completion = await completion_task
+            
+            # Convert to dict format that matches the original interface
+            return completion.model_dump()
+        
+        except AuthenticationError as e:
+            raise HTTPException(status_code=401, detail=self.classify_openai_error(str(e)))
+        except RateLimitError as e:
+            raise HTTPException(status_code=429, detail=self.classify_openai_error(str(e)))
+        except BadRequestError as e:
+            raise HTTPException(status_code=400, detail=self.classify_openai_error(str(e)))
+        except APIError as e:
+            status_code = getattr(e, 'status_code', 500)
+            raise HTTPException(status_code=status_code, detail=self.classify_openai_error(str(e)))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        
+        finally:
+            # Clean up active request tracking
+            if request_id and request_id in self.active_requests:
+                del self.active_requests[request_id]
+    
+    async def create_chat_completion_stream(self, request: Dict[str, Any], request_id: Optional[str] = None) -> AsyncGenerator[str, None]:
+        """Send streaming chat completion with cancellation and automatic failover support."""
+        
+        # Create cancellation token if request_id provided
+        if request_id:
+            cancel_event = asyncio.Event()
+            self.active_requests[request_id] = cancel_event
+        
+        try:
+            # Ensure stream is enabled
+            request["stream"] = True
+            if "stream_options" not in request:
+                request["stream_options"] = {}
+            request["stream_options"]["include_usage"] = True
+            
+            # Create the streaming completion with automatic retry and fallback
+            streaming_completion = None
+            last_error = None
+            for attempt in range(6):
+                try:
+                    streaming_completion = await self.client.chat.completions.create(**request)
+                    last_error = None
+                    break
+                except Exception as err:
+                    last_error = err
+                    status = getattr(err, 'status_code', None)
+                    err_str = str(err).lower()
+                    if status in (429, 500, 502, 503, 504) or 'overload' in err_str or 'concurrency' in err_str or 'bad_response' in err_str:
+                        if attempt < 5:
+                            await asyncio.sleep(1.5 * (attempt + 1))
+                            continue
+                    break
+            
+            # If primary retries failed, attempt fallback provider if configured
+            if streaming_completion is None and self.fallback_client:
+                fallback_req = dict(request)
+                if self.fallback_model:
+                    fallback_req["model"] = self.fallback_model
+                try:
+                    streaming_completion = await self.fallback_client.chat.completions.create(**fallback_req)
+                    last_error = None
+                except Exception as fb_err:
+                    last_error = fb_err
+
+            # If all attempts exhausted
+            if streaming_completion is None:
+                err_msg = self.classify_openai_error(str(last_error)) if last_error else "All upstream attempts exhausted"
+                yield f"ERROR::503::{err_msg}"
+                return
+            
+            async for chunk in streaming_completion:
+                # Check for cancellation before yielding each chunk
+                if request_id and request_id in self.active_requests:
+                    if self.active_requests[request_id].is_set():
+                        yield "ERROR::499::Request cancelled by client"
+                        return
+                
+                # Convert chunk to SSE format matching original HTTP client format
+                chunk_dict = chunk.model_dump()
+                chunk_json = json.dumps(chunk_dict, ensure_ascii=False)
+                yield f"data: {chunk_json}"
+            
+            # Signal end of stream
+            yield "data: [DONE]"
+                
+        except Exception as e:
+            # NEVER raise from inside an async generator used by StreamingResponse.
+            # Yield an error marker that response_converter will handle gracefully.
+            status = getattr(e, 'status_code', 500)
+            yield f"ERROR::{status}::{self.classify_openai_error(str(e))}"
+        
+        finally:
+            # Clean up active request tracking
+            if request_id and request_id in self.active_requests:
+                del self.active_requests[request_id]
+
+    def classify_openai_error(self, error_detail: Any) -> str:
+        """Provide specific error guidance for common OpenAI API issues."""
+        error_str = str(error_detail).lower()
+        
+        # Region/country restrictions
+        if "unsupported_country_region_territory" in error_str or "country, region, or territory not supported" in error_str:
+            return "OpenAI API is not available in your region. Consider using a VPN or Azure OpenAI service."
+        
+        # API key issues
+        if "invalid_api_key" in error_str or "unauthorized" in error_str:
+            return "Invalid API key. Please check your OPENAI_API_KEY configuration."
+        
+        # Rate limiting
+        if "rate_limit" in error_str or "quota" in error_str:
+            return "Rate limit exceeded. Please wait and try again, or upgrade your API plan."
+        
+        # Model not found
+        if "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
+            return "Model not found. Please check your BIG_MODEL and SMALL_MODEL configuration."
+        
+        # Billing issues
+        if "billing" in error_str or "payment" in error_str:
+            return "Billing issue. Please check your OpenAI account billing status."
+        
+        # Default: return original message
+        return str(error_detail)
+    
+    def cancel_request(self, request_id: str) -> bool:
+        """Cancel an active request by request_id."""
+        if request_id in self.active_requests:
+            self.active_requests[request_id].set()
+            return True
+        return False
