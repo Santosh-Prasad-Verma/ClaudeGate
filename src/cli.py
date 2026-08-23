@@ -73,36 +73,38 @@ def run_interactive_setup() -> None:
     print("🛠️  ClaudeGate Universal Setup Wizard\n")
     
     presets = {
-        "1":  ("OpenRouter (Free & Paid - Nemotron, Gemma, Qwen, DeepSeek)", "openrouter.env"),
-        "2":  ("Groq (Ultra-Fast - Llama 3.3 70B, DeepSeek R1 Distill)", "groq.env"),
-        "3":  ("Ollama (100% Local, Private, Zero-Cost - Qwen 2.5 Coder)", "ollama.env"),
-        "4":  ("DeepSeek Official (Frontier Reasoning - R1 & V3)", "deepseek.env"),
-        "5":  ("Google Gemini (Gemini 2.0 Flash / Pro via OpenAI API)", "gemini.env"),
-        "6":  ("Mistral AI & Codestral (Premier European Models)", "mistral.env"),
-        "7":  ("OpenAI Official (o1, o3-mini, GPT-4o, GPT-4o-mini)", "openai.env"),
-        "8":  ("Together AI (High-Throughput Open Source Models)", "together.env"),
-        "9":  ("Fireworks AI (Low-Latency Coder & Reasoning)", "fireworks.env"),
-        "10": ("Cerebras AI (World's Fastest Inference Engine)", "cerebras.env"),
-        "11": ("SambaNova Cloud (SN40L High Speed Chips)", "sambanova.env"),
-        "12": ("Perplexity AI (Web-Grounded Reasoning Sonar)", "perplexity.env"),
-        "13": ("Cohere AI (Enterprise Command R+)", "cohere.env"),
-        "14": ("SiliconFlow (Global Open-Source Model Cloud)", "siliconflow.env"),
-        "15": ("LM Studio (Local Desktop Runtime)", "lmstudio.env"),
-        "16": ("vLLM (Self-Hosted GPU Server)", "vllm.env"),
-        "17": ("Azure OpenAI Service (Enterprise)", "azure.env"),
-        "18": ("Kiro Gateway (Amazon Q Developer / CodeWhisperer Bridge)", "kiro.env"),
-        "19": ("Qwen Official / DashScope (qwen-max, qwen2.5-coder-32b)", "qwen.env"),
-        "20": ("Moonshot Kimi (kimi-k1.5, moonshot-v1-128k long context)", "kimi.env"),
-        "21": ("MiniMax (MiniMax-Text-01, abab6.5s code intelligence)", "minimax.env"),
-        "22": ("Ox Alpha (Next-Gen Autonomous Agent & Frontier Model)", "ox.env"),
+        "1":  ("OpenRouter (Claude Opus 5, Sonnet 5, Haiku 4.5 / DeepSeek V4)", "openrouter.env"),
+        "2":  ("Groq (DeepSeek V4 Pro, Llama 4 Maverick, Muse Glimmer)", "groq.env"),
+        "3":  ("Ollama (100% Local - DeepSeek V4-Pro, Qwen3.6-35B, Muse Glimmer)", "ollama.env"),
+        "4":  ("DeepSeek Official (DeepSeek V4-Pro & V4-Flash)", "deepseek.env"),
+        "5":  ("Google Gemini (Gemini 3.1 Pro, 3.7 Flash & 3.5 Flash-Lite)", "gemini.env"),
+        "6":  ("OpenAI Official (GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna)", "openai.env"),
+        "7":  ("Moonshot Kimi (Kimi K3 2.8T Reasoning & K2.7 Code)", "kimi.env"),
+        "8":  ("Alibaba Qwen / DashScope (Qwen3.8-Max 2.4T, Qwen3.7-Plus, Qwen3.8-27B)", "qwen.env"),
+        "9":  ("Mistral AI (Mistral Large 3, Mistral Medium 3.5, Mistral Small 4)", "mistral.env"),
+        "10": ("Perplexity AI (Sonar Reasoning Pro, Sonar Pro & Sonar)", "perplexity.env"),
+        "11": ("Cohere AI (Command A+, Command A & Command R7B)", "cohere.env"),
+        "12": ("MiniMax (MiniMax M3 Frontier & MiniMax M2.7)", "minimax.env"),
+        "13": ("Meta AI (Muse Spark 1.2, Llama 4 Maverick, Muse Glimmer)", "meta.env"),
+        "14": ("Z.ai / Zhipu GLM (GLM-5.3 Flagship, GLM-5-Turbo, GLM-4.7-Flash)", "zai.env"),
+        "15": ("Together AI (DeepSeek V4-Pro, DeepSeek V4-Flash, Qwen3.8-27B)", "together.env"),
+        "16": ("Fireworks AI (DeepSeek V4-Pro, DeepSeek V4-Flash, Qwen3.8-27B)", "fireworks.env"),
+        "17": ("Cerebras AI (DeepSeek V4-Pro, Llama 4 Maverick, Muse Glimmer)", "cerebras.env"),
+        "18": ("SambaNova Cloud (DeepSeek V4-Pro, Llama 4 Maverick, Qwen3.8-27B)", "sambanova.env"),
+        "19": ("SiliconFlow (DeepSeek V4-Pro, DeepSeek V4-Flash, Qwen3.8-27B)", "siliconflow.env"),
+        "20": ("LM Studio (Local Desktop - DeepSeek V4-Pro & Muse Glimmer)", "lmstudio.env"),
+        "21": ("vLLM (Self-Hosted GPU Server - DeepSeek V4-Pro & Qwen3.6-35B)", "vllm.env"),
+        "22": ("Azure OpenAI Service (o1 & GPT-5.6 Flagship Deployments)", "azure.env"),
+        "23": ("Kiro Gateway (Amazon Q Developer / Claude Opus 5 Bridge)", "kiro.env"),
+        "24": ("Ox Alpha (Next-Gen Autonomous Agent & Frontier Model)", "ox.env"),
     }
     
     print("Select an AI Provider Preset:")
     for k, (label, _) in presets.items():
         print(f"  [{k.rjust(2)}] {label}")
-    print("  [23] Custom / Manual Configuration\n")
+    print("  [25] Custom / Manual Configuration\n")
     
-    choice = input("Enter choice (1-23) [1]: ").strip() or "1"
+    choice = input("Enter choice (1-25) [1]: ").strip() or "1"
     target_env = os.path.join(server_dir, ".env")
     
     if choice in presets:
@@ -117,7 +119,7 @@ def run_interactive_setup() -> None:
             return
             
         # If not purely local, prompt for API key
-        if choice not in ("3", "15", "16", "18"): # Local or bridge
+        if choice not in ("3", "20", "21", "23"): # Local or bridge
             raw_key = input("\nEnter your API key for this provider: ").strip()
             api_key = sanitize_env_value(raw_key)
             if api_key:
@@ -131,7 +133,8 @@ def run_interactive_setup() -> None:
                     "YOUR_TOGETHER_API_KEY", "YOUR_FIREWORKS_API_KEY", "csk-YOUR_CEREBRAS_API_KEY",
                     "YOUR_SAMBANOVA_API_KEY", "pplx-YOUR_PERPLEXITY_KEY", "YOUR_COHERE_API_KEY",
                     "sk-YOUR_SILICONFLOW_KEY", "YOUR_AZURE_OPENAI_KEY", "sk-YOUR_DASHSCOPE_KEY",
-                    "sk-YOUR_MOONSHOT_KEY", "YOUR_MINIMAX_KEY", "sk-YOUR_OX_API_KEY"
+                    "sk-YOUR_MOONSHOT_KEY", "YOUR_MINIMAX_KEY", "sk-YOUR_OX_API_KEY",
+                    "YOUR_META_API_KEY", "YOUR_ZHIPU_API_KEY"
                 ]:
                     content = content.replace(placeholder, api_key)
                 content = content.replace('OPENAI_API_KEY="your-api-key-here"', f'OPENAI_API_KEY="{api_key}"')
