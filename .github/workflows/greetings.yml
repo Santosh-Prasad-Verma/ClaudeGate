@@ -1,30 +1,54 @@
 name: Greetings
 
 on:
-  pull_request_target:
+  pull_request:
     types: [ opened ]
   issues:
     types: [ opened ]
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   greeting:
+    name: Welcome Comment
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
     steps:
-      - uses: actions/first-interaction@v1
+      - name: Greet Contributor
+        uses: actions/github-script@v7
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-message: |
-            👋 Welcome @${{ github.actor }}! Thank you for opening your first issue in **ClaudeGate**.
-            
-            Please ensure you have provided all relevant details, reproduction steps, and configuration (without sensitive API keys). Our team will review this shortly!
-          pr-message: |
-            🎉 Thanks @${{ github.actor }} for submitting your first pull request to **ClaudeGate**!
-            
-            Please make sure:
-            - Your changes pass all automated CI tests.
-            - You have followed our [Contributing Guidelines](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md).
-            
-            We appreciate your contribution! 🚀
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const isPR = !!context.payload.pull_request;
+            const actor = context.actor;
+            const issueNumber = context.issue.number;
+
+            let body = "";
+            if (isPR) {
+              body = `🎉 Thank you @${actor} for opening this Pull Request to **ClaudeGate**!
+
+### 📋 Pull Request Checklist:
+- [ ] Automated CI matrix tests pass (\`pytest\`)
+- [ ] Security scans pass (Bandit SAST, CodeQL, Trivy)
+- [ ] Code follows [Contributing Guidelines](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md)
+
+Our team will review your changes shortly. Thank you for contributing! 🚀`;
+            } else {
+              body = `👋 Welcome @${actor}! Thank you for opening an issue in **ClaudeGate**.
+
+Please ensure you have provided:
+- A clear description of the issue or feature request
+- Steps to reproduce (if a bug report)
+- Your environment configuration (excluding secret API keys)
+
+We appreciate your feedback and will look into this soon! ✨`;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: body
+            });
