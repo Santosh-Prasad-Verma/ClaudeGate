@@ -33,6 +33,14 @@ dependencies = [
     "httpx>=0.28.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.5.0",
+    "build",
+]
+
 [project.scripts]
 claudegate = "src.cli:cli_main"
 
@@ -41,3 +49,6 @@ Homepage = "https://github.com/Santosh-Prasad-Verma/ClaudeGate"
 Documentation = "https://github.com/Santosh-Prasad-Verma/ClaudeGate#readme"
 Repository = "https://github.com/Santosh-Prasad-Verma/ClaudeGate.git"
 Issues = "https://github.com/Santosh-Prasad-Verma/ClaudeGate/issues"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
