@@ -1,5 +1,4 @@
 import os
-import sys
 from dotenv import load_dotenv
 
 server_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,7 +20,7 @@ class Config:
         
         self.openai_base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         self.azure_api_version = os.environ.get("AZURE_API_VERSION")  # For Azure OpenAI
-        self.host = os.environ.get("HOST", "0.0.0.0")
+        self.host = os.environ.get("HOST", "127.0.0.1")
         self.port = int(os.environ.get("PORT", "8082"))
         self.log_level = os.environ.get("LOG_LEVEL", "INFO")
         self.max_tokens_limit = int(os.environ.get("MAX_TOKENS_LIMIT", "4096"))
@@ -90,5 +89,6 @@ class Config:
 try:
     config = Config()
 except Exception as e:
-    print(f"❌ ClaudeGate Configuration Error: {e}")
+    import sys
+    print(f"❌ ClaudeGate Configuration Error: {e}", file=sys.stderr)
     sys.exit(1)

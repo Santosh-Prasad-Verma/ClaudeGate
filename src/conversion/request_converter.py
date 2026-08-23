@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from src.core.constants import Constants
 from src.models.claude import ClaudeMessagesRequest, ClaudeMessage
 from src.core.config import config
@@ -111,8 +111,13 @@ def convert_claude_to_openai(
         "temperature": claude_request.temperature,
         "stream": claude_request.stream,
     }
+    sanitized_model_for_log = str(openai_model).replace("\r", "").replace("\n", "")
+    sanitized_stream_for_log = str(claude_request.stream).replace("\r", "").replace("\n", "")
     logger.debug(
-        f"Converted Claude request to OpenAI format: {json.dumps(openai_request, indent=2, ensure_ascii=False)}"
+        "Converted Claude request to OpenAI format: model=%s, messages_count=%d, stream=%s",
+        sanitized_model_for_log,
+        len(openai_messages),
+        sanitized_stream_for_log,
     )
     # Add optional parameters
     if claude_request.stop_sequences:
