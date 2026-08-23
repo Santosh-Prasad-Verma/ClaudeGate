@@ -1,0 +1,30 @@
+name: Greetings
+
+on:
+  pull_request_target:
+    types: [ opened ]
+  issues:
+    types: [ opened ]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 Welcome @${{ github.actor }}! Thank you for opening your first issue in **ClaudeGate**.
+            
+            Please ensure you have provided all relevant details, reproduction steps, and configuration (without sensitive API keys). Our team will review this shortly!
+          pr-message: |
+            🎉 Thanks @${{ github.actor }} for submitting your first pull request to **ClaudeGate**!
+            
+            Please make sure:
+            - Your changes pass all automated CI tests.
+            - You have followed our [Contributing Guidelines](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md).
+            
+            We appreciate your contribution! 🚀
