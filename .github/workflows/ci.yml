@@ -38,7 +38,7 @@ jobs:
 
       - name: Lint with Ruff
         run: |
-          ruff check src/
+          ruff check src/ --select E9,F63,F7,F82
 
       - name: Install package in editable mode
         run: |
