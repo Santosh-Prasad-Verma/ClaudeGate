@@ -94,14 +94,15 @@ def run_interactive_setup() -> None:
         "19": ("Qwen Official / DashScope (qwen-max, qwen2.5-coder-32b)", "qwen.env"),
         "20": ("Moonshot Kimi (kimi-k1.5, moonshot-v1-128k long context)", "kimi.env"),
         "21": ("MiniMax (MiniMax-Text-01, abab6.5s code intelligence)", "minimax.env"),
+        "22": ("Ox Alpha (Next-Gen Autonomous Agent & Frontier Model)", "ox.env"),
     }
     
     print("Select an AI Provider Preset:")
     for k, (label, _) in presets.items():
         print(f"  [{k.rjust(2)}] {label}")
-    print("  [22] Custom / Manual Configuration\n")
+    print("  [23] Custom / Manual Configuration\n")
     
-    choice = input("Enter choice (1-22) [1]: ").strip() or "1"
+    choice = input("Enter choice (1-23) [1]: ").strip() or "1"
     target_env = os.path.join(server_dir, ".env")
     
     if choice in presets:
@@ -130,7 +131,7 @@ def run_interactive_setup() -> None:
                     "YOUR_TOGETHER_API_KEY", "YOUR_FIREWORKS_API_KEY", "csk-YOUR_CEREBRAS_API_KEY",
                     "YOUR_SAMBANOVA_API_KEY", "pplx-YOUR_PERPLEXITY_KEY", "YOUR_COHERE_API_KEY",
                     "sk-YOUR_SILICONFLOW_KEY", "YOUR_AZURE_OPENAI_KEY", "sk-YOUR_DASHSCOPE_KEY",
-                    "sk-YOUR_MOONSHOT_KEY", "YOUR_MINIMAX_KEY"
+                    "sk-YOUR_MOONSHOT_KEY", "YOUR_MINIMAX_KEY", "sk-YOUR_OX_API_KEY"
                 ]:
                     content = content.replace(placeholder, api_key)
                 content = content.replace('OPENAI_API_KEY="your-api-key-here"', f'OPENAI_API_KEY="{api_key}"')
