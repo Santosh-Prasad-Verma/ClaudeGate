@@ -12,7 +12,7 @@ class ModelManager:
         # Direct pass-through if model name looks like a specific OpenAI/OpenRouter/Groq/Ollama/Kiro slug
         if "/" in claude_model or claude_model.startswith((
             "gpt-", "o1-", "o3-", "llama", "qwen", "mistral", "deepseek", "gemini",
-            "glm", "minimax", "claude-sonnet-4", "claude-haiku-4", "claude-opus-4"
+            "glm", "minimax", "moonshot", "kimi", "claude-sonnet-4", "claude-haiku-4", "claude-opus-4"
         )):
             return claude_model
         
