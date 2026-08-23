@@ -22,8 +22,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const isPR = !!context.payload.pull_request;
+            const isIssue = !!context.payload.issue;
             const actor = context.actor;
-            const issueNumber = context.issue.number;
+            const issueNumber = context.payload.pull_request?.number || context.payload.issue?.number || context.issue?.number;
+
+            if (!issueNumber) {
+              console.log("No issue or PR number found in payload. Skipping.");
+              return;
+            }
 
             let body = "";
             if (isPR) {
@@ -35,7 +41,7 @@ jobs:
 - [ ] Code follows [Contributing Guidelines](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md)
 
 Our team will review your changes shortly. Thank you for contributing! 🚀`;
-            } else {
+            } else if (isIssue) {
               body = `👋 Welcome @${actor}! Thank you for opening an issue in **ClaudeGate**.
 
 Please ensure you have provided:
@@ -46,9 +52,11 @@ Please ensure you have provided:
 We appreciate your feedback and will look into this soon! ✨`;
             }
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: body
-            });
+            if (body) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: body
+              });
+            }
