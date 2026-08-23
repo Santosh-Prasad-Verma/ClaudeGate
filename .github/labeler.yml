@@ -1,0 +1,27 @@
+area: backend:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/*.py'
+
+area: cli:
+  - changed-files:
+      - any-glob-to-any-file: ['src/cli.py', 'start_proxy.py']
+
+area: docker:
+  - changed-files:
+      - any-glob-to-any-file: ['Dockerfile', 'docker-compose.yml', '.dockerignore']
+
+area: ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+area: tests:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**'
+
+area: docs:
+  - changed-files:
+      - any-glob-to-any-file: ['*.md', 'docs/**']
+
+area: config:
+  - changed-files:
+      - any-glob-to-any-file: ['pyproject.toml', 'requirements.txt', 'setup.py', '.env.example', 'presets/**']
