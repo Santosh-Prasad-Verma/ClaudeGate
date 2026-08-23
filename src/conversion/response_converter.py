@@ -21,8 +21,14 @@ def convert_openai_to_claude_response(
     # Build Claude content blocks
     content_blocks = []
 
-    # Add text content
+    # Add text content (supporting reasoning models with reasoning_content / reasoning)
     text_content = message.get("content")
+    if (text_content is None or text_content == "") and not message.get("tool_calls"):
+        if message.get("reasoning_content"):
+            text_content = message.get("reasoning_content")
+        elif message.get("reasoning"):
+            text_content = message.get("reasoning")
+
     if text_content is not None:
         content_blocks.append({"type": Constants.CONTENT_TEXT, "text": text_content})
 
