@@ -112,10 +112,12 @@ async def create_message(
     async with concurrency_semaphore:
         request_id = str(uuid.uuid4())
         try:
+            sanitized_model = str(request.model).replace("\r", "").replace("\n", "")
+            sanitized_stream = str(request.stream).replace("\r", "").replace("\n", "")
             logger.debug(
                 "Processing Claude request: model=%s, stream=%s",
-                request.model,
-                request.stream,
+                sanitized_model,
+                sanitized_stream,
             )
 
             # Convert Claude request to OpenAI format
@@ -149,7 +151,7 @@ async def create_message(
                     )
                 except HTTPException as e:
                     if e.status_code == 499:
-                        logger.info(f"Streaming request {request_id} cancelled by client")
+                        logger.info("Streaming request %s cancelled by client", request_id)
                         return JSONResponse(
                             status_code=499,
                             content={
@@ -178,7 +180,7 @@ async def create_message(
                 return claude_response
         except HTTPException as e:
             if e.status_code == 499:
-                logger.info(f"Request {request_id} was cancelled by client")
+                logger.info("Request %s was cancelled by client", request_id)
                 return JSONResponse(
                     status_code=499,
                     content={
@@ -191,7 +193,7 @@ async def create_message(
                 )
             raise
         except asyncio.CancelledError:
-            logger.info(f"Request {request_id} cancelled due to client disconnect")
+            logger.info("Request %s cancelled due to client disconnect", request_id)
             return JSONResponse(
                 status_code=499,
                 content={

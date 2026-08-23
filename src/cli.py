@@ -104,7 +104,7 @@ def run_interactive_setup() -> None:
             try:
                 os.chmod(target_env, 0o600)
             except OSError:
-                pass
+                pass  # Best-effort file permission hardening; unsupported on some filesystems
             print(f"\n✅ Applied preset: {preset_file}")
         else:
             print(f"❌ Preset file {preset_file} not found.")
@@ -135,7 +135,7 @@ def run_interactive_setup() -> None:
                 try:
                     os.chmod(target_env, 0o600)
                 except OSError:
-                    pass
+                    pass  # Best-effort file permission hardening; unsupported on some filesystems
                 print("✅ API key successfully configured in .env.")
     else:
         # Manual flow with input sanitization
@@ -166,7 +166,7 @@ ALLOW_ANONYMOUS_ACCESS="false"
         try:
             os.chmod(target_env, 0o600)
         except OSError:
-            pass
+            pass  # Best-effort file permission hardening; unsupported on some filesystems
         print("✅ Custom configuration saved to .env.")
 
     print("\n🎉 Setup complete! You can test your connection with:\n   python start_proxy.py --test\n")
@@ -185,7 +185,7 @@ def apply_preset(preset_name: str) -> None:
         try:
             os.chmod(target_env, 0o600)
         except OSError:
-            pass
+            pass  # Best-effort file permission hardening; unsupported on some filesystems
         print(f"✅ Loaded preset '{safe_name}' into .env.")
         print("👉 Remember to edit .env and insert your API key if required.")
     else:

@@ -2,10 +2,9 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from src.core.client import OpenAIClient
 from src.main import app
-from src.models.claude import ClaudeMessagesRequest, ClaudeMessage
-from fastapi.testclient import TestClient
 
 
 def test_non_streaming_explicit_cancellation():
@@ -56,10 +55,7 @@ def test_non_streaming_external_task_cancellation():
             base_url="https://api.example.com/v1"
         )
 
-        backend_called = False
         async def slow_mock_create(**kwargs):
-            nonlocal backend_called
-            backend_called = True
             await asyncio.sleep(10)
             return MagicMock()
 
@@ -159,7 +155,6 @@ def test_endpoint_messages_cancellation_response():
     """Verify that cancelled requests to /v1/messages return clean 499 status response."""
     async def _run():
         import src.api.endpoints as endpoints
-        from fastapi.testclient import TestClient
 
         # Mock openai_client to raise HTTPException(499)
         mock_chat_completion = AsyncMock(

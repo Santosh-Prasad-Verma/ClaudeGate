@@ -120,16 +120,20 @@ class OpenAIClient:
                     task.cancel()
                     try:
                         await task
-                    except (asyncio.CancelledError, Exception):
-                        pass
+                    except asyncio.CancelledError:
+                        pass  # Expected when task is cancelled
+                    except Exception as exc:
+                        logger.debug("Ignoring exception while awaiting cancelled pending task: %s", exc)
                 
                 # Check if request was cancelled
                 if cancel_task in done:
                     completion_task.cancel()
                     try:
                         await completion_task
-                    except (asyncio.CancelledError, Exception):
-                        pass
+                    except asyncio.CancelledError:
+                        pass  # Expected when task is cancelled
+                    except Exception as exc:
+                        logger.debug("Ignoring exception while awaiting cancelled completion task: %s", exc)
                     raise HTTPException(status_code=499, detail="Request cancelled by client")
                 
                 completion = await completion_task
@@ -146,14 +150,18 @@ class OpenAIClient:
                 completion_task.cancel()
                 try:
                     await completion_task
-                except (asyncio.CancelledError, Exception):
-                    pass
+                except asyncio.CancelledError:
+                    pass  # Task cancellation expected
+                except Exception as exc:
+                    logger.debug("Ignoring exception while awaiting cancelled completion task: %s", exc)
             if cancel_task and not cancel_task.done():
                 cancel_task.cancel()
                 try:
                     await cancel_task
-                except (asyncio.CancelledError, Exception):
-                    pass
+                except asyncio.CancelledError:
+                    pass  # Cancel task cancellation expected
+                except Exception as exc:
+                    logger.debug("Ignoring exception while awaiting cancelled task: %s", exc)
             raise
         except AuthenticationError as e:
             raise HTTPException(status_code=401, detail=self.classify_openai_error(str(e)))

@@ -111,11 +111,13 @@ def convert_claude_to_openai(
         "temperature": claude_request.temperature,
         "stream": claude_request.stream,
     }
+    sanitized_model_for_log = str(openai_model).replace("\r", "").replace("\n", "")
+    sanitized_stream_for_log = str(claude_request.stream).replace("\r", "").replace("\n", "")
     logger.debug(
         "Converted Claude request to OpenAI format: model=%s, messages_count=%d, stream=%s",
-        openai_model,
+        sanitized_model_for_log,
         len(openai_messages),
-        claude_request.stream,
+        sanitized_stream_for_log,
     )
     # Add optional parameters
     if claude_request.stop_sequences:
