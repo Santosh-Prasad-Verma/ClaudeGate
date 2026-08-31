@@ -7,12 +7,33 @@ if os.path.exists(env_file):
     load_dotenv(env_file, override=False)
 
 # Configuration
+def _int_env(name: str, default: int, minimum: int = 0) -> int:
+    raw = os.environ.get(name, str(default))
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if value < minimum:
+        raise ValueError(f"{name} must be >= {minimum}")
+    return value
+
+
+def _bool_env(name: str, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    value = raw.strip().lower()
+    if value not in {"true", "false", "1", "0", "yes", "no"}:
+        raise ValueError(f"{name} must be true or false")
+    return value in {"true", "1", "yes"}
+
+
 class Config:
-    def __init__(self):
+    def __init__(self, require_api_key: bool = True):
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-        if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment variables")
-        
+        if require_api_key and not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required for runtime commands")
+
         # Add Anthropic API key for client validation
         self.anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not self.anthropic_api_key:
@@ -21,14 +42,18 @@ class Config:
         self.openai_base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         self.azure_api_version = os.environ.get("AZURE_API_VERSION")  # For Azure OpenAI
         self.host = os.environ.get("HOST", "127.0.0.1")
-        self.port = int(os.environ.get("PORT", "8082"))
+        self.port = _int_env("PORT", 8082, 1)
+        if self.port > 65535:
+            raise ValueError("PORT must be <= 65535")
         self.log_level = os.environ.get("LOG_LEVEL", "INFO")
-        self.max_tokens_limit = int(os.environ.get("MAX_TOKENS_LIMIT", "4096"))
-        self.min_tokens_limit = int(os.environ.get("MIN_TOKENS_LIMIT", "100"))
-        
+        self.max_tokens_limit = _int_env("MAX_TOKENS_LIMIT", 4096, 1)
+        self.min_tokens_limit = _int_env("MIN_TOKENS_LIMIT", 100, 1)
+        if self.min_tokens_limit > self.max_tokens_limit:
+            raise ValueError("MIN_TOKENS_LIMIT must be <= MAX_TOKENS_LIMIT")
+
         # Connection settings
-        self.request_timeout = int(os.environ.get("REQUEST_TIMEOUT", "90"))
-        self.max_retries = int(os.environ.get("MAX_RETRIES", "2"))
+        self.request_timeout = _int_env("REQUEST_TIMEOUT", 90, 1)
+        self.max_retries = _int_env("MAX_RETRIES", 2, 0)
         
         # Model settings - BIG and SMALL models
         self.big_model = os.environ.get("BIG_MODEL", "gpt-4o")
@@ -41,9 +66,9 @@ class Config:
         self.fallback_model = os.environ.get("FALLBACK_MODEL")
 
         # Security & Traffic Controls
-        self.allow_anonymous_access = os.environ.get("ALLOW_ANONYMOUS_ACCESS", "false").lower() in ("true", "1", "yes")
-        self.rate_limit_per_minute = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "120"))
-        self.max_concurrent_requests = int(os.environ.get("MAX_CONCURRENT_REQUESTS", "30"))
+        self.allow_anonymous_access = _bool_env("ALLOW_ANONYMOUS_ACCESS", False)
+        self.rate_limit_per_minute = _int_env("RATE_LIMIT_PER_MINUTE", 120, 0)
+        self.max_concurrent_requests = _int_env("MAX_CONCURRENT_REQUESTS", 30, 1)
         raw_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8082,http://127.0.0.1:8082,http://localhost:3000,http://127.0.0.1:3000")
         self.allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
         
@@ -86,9 +111,13 @@ class Config:
         
         return custom_headers
 
-try:
-    config = Config()
-except Exception as e:
-    import sys
-    print(f"❌ ClaudeGate Configuration Error: {e}", file=sys.stderr)
-    sys.exit(1)
+# Keep imports usable by setup/help commands. Runtime entry points must call
+# get_config() before contacting an upstream provider or serving requests.
+config = Config(require_api_key=False)
+
+
+def get_config() -> Config:
+    """Load validated runtime configuration on demand."""
+    global config
+    config = Config(require_api_key=True)
+    return config

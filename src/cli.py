@@ -7,8 +7,12 @@ import argparse
 import asyncio
 import re
 import httpx
-from src.core.config import server_dir, config
 from src.core.constants import BANNER
+
+
+def get_server_dir() -> str:
+    """Return the repository directory containing .env and presets."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def print_banner() -> None:
     """Print the ASCII startup banner."""
@@ -16,6 +20,8 @@ def print_banner() -> None:
 
 async def test_upstream_connection() -> bool:
     """Test connectivity to the configured upstream provider."""
+    from src.core.config import get_config
+    config = get_config()
     print("\n🔍 Testing upstream connection...")
     print(f"   Provider Base URL: {config.openai_base_url}")
     print(f"   Test Model:        {config.small_model}")
@@ -93,6 +99,7 @@ def run_interactive_setup() -> None:
     print("  [25] Custom / Manual Configuration\n")
     
     choice = input("Enter choice (1-25) [1]: ").strip() or "1"
+    server_dir = get_server_dir()
     target_env = os.path.join(server_dir, ".env")
     
     if choice in presets:
@@ -173,6 +180,7 @@ ALLOW_ANONYMOUS_ACCESS="false"
 
 def apply_preset(preset_name: str) -> None:
     """Apply a preset by name with path traversal protection."""
+    server_dir = get_server_dir()
     # Sanitize preset name to strictly alphanumeric, dashes, and underscores
     safe_name = re.sub(r'[^a-zA-Z0-9_-]', '', preset_name).lower()
     preset_file = f"{safe_name}.env"
@@ -212,8 +220,7 @@ def cli_main() -> None:
         run_interactive_setup()
         sys.exit(0)
     elif args.test:
-        asyncio.run(test_upstream_connection())
-        sys.exit(0)
+        sys.exit(0 if asyncio.run(test_upstream_connection()) else 1)
     elif args.preset:
         apply_preset(args.preset)
         sys.exit(0)

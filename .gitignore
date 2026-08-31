@@ -3,7 +3,9 @@
 .env.local
 *.env
 !*.env.example
-!presets/*.env
+# Presets are templates only. Keep local/provider-specific env files ignored.
+presets/*.env
+!presets/*.env.example
 
 # Python bytecode & cache
 __pycache__/

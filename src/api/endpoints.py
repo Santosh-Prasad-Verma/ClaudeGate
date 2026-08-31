@@ -8,7 +8,9 @@ from collections import defaultdict, deque
 from fastapi import APIRouter, HTTPException, Request, Header, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from src.core.config import config
+from src.core.config import get_config
+
+config = get_config()
 from src.core.logging import logger
 from src.core.client import OpenAIClient
 from src.models.claude import ClaudeMessagesRequest, ClaudeTokenCountRequest
@@ -33,6 +35,7 @@ openai_client = OpenAIClient(
     fallback_base_url=config.fallback_base_url,
     fallback_api_key=config.fallback_api_key,
     fallback_model=config.fallback_model,
+    max_retries=config.max_retries,
 )
 
 # Sliding Window Rate Limiter
@@ -50,6 +53,9 @@ class SlidingWindowRateLimiter:
             queue = self.requests[key]
             while queue and queue[0] <= now - 60.0:
                 queue.popleft()
+            if not queue:
+                self.requests.pop(key, None)
+                queue = self.requests[key]
             if len(queue) >= self.limit:
                 return False
             queue.append(now)
@@ -205,8 +211,8 @@ async def create_message(
                 },
             )
         except Exception as e:
-            logger.error(f"Unexpected error processing request: {e}")
-            error_message = openai_client.classify_openai_error(str(e))
+            logger.error("Unexpected error processing request: %s", type(e).__name__)
+            error_message = openai_client.classify_openai_error(type(e).__name__)
             raise HTTPException(status_code=500, detail=error_message)
 
 
@@ -282,8 +288,8 @@ async def test_connection(_: None = Depends(validate_api_key)):
         }
 
     except Exception as e:
-        logger.error(f"API connectivity test failed: {e}")
-        error_message = openai_client.classify_openai_error(str(e))
+        logger.error("API connectivity test failed: %s", type(e).__name__)
+        error_message = openai_client.classify_openai_error(type(e).__name__)
         return JSONResponse(
             status_code=503,
             content={
