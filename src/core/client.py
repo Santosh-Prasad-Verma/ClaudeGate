@@ -196,6 +196,25 @@ class OpenAIClient:
         
         streaming_completion = None
         stream_closed = False
+
+        async def close_stream_once() -> None:
+            nonlocal stream_closed
+            if streaming_completion is None or stream_closed:
+                return
+            stream_closed = True
+            if hasattr(streaming_completion, "aclose"):
+                try:
+                    await streaming_completion.aclose()
+                except Exception as e:
+                    logger.debug("Failed closing stream: %s", type(e).__name__)
+            elif hasattr(streaming_completion, "close"):
+                try:
+                    result = streaming_completion.close()
+                    if asyncio.iscoroutine(result):
+                        await result
+                except Exception as e:
+                    logger.debug("Failed closing stream: %s", type(e).__name__)
+
         try:
             # Ensure stream is enabled
             request = dict(request)
@@ -263,21 +282,7 @@ class OpenAIClient:
             yield "data: [DONE]"
                 
         except asyncio.CancelledError:
-            # When generator is cancelled / closed
-            if streaming_completion is not None and not stream_closed:
-                stream_closed = True
-                if hasattr(streaming_completion, "aclose"):
-                    try:
-                        await streaming_completion.aclose()
-                    except Exception as e:
-                        logger.debug("Failed closing stream: %s", type(e).__name__)
-                elif hasattr(streaming_completion, "close"):
-                    try:
-                        res = streaming_completion.close()
-                        if asyncio.iscoroutine(res):
-                            await res
-                    except Exception as e:
-                        logger.debug("Failed closing stream during cancellation: %s", e)
+            # Cleanup is centralized in finally so it runs exactly once.
             raise
         except Exception as e:
             # NEVER raise from inside an async generator used by StreamingResponse.
@@ -286,20 +291,7 @@ class OpenAIClient:
             yield f"ERROR::{status}::{self.classify_openai_error(e)}"
         
         finally:
-            if streaming_completion is not None and not stream_closed:
-                stream_closed = True
-                if hasattr(streaming_completion, "aclose"):
-                    try:
-                        await streaming_completion.aclose()
-                    except Exception as e:
-                        logger.debug("Failed closing stream: %s", type(e).__name__)
-                elif hasattr(streaming_completion, "close"):
-                    try:
-                        res = streaming_completion.close()
-                        if asyncio.iscoroutine(res):
-                            await res
-                    except Exception as e:
-                        logger.debug("Failed closing stream in finally: %s", e)
+            await close_stream_once()
             # Clean up active request tracking
             if request_id and request_id in self.active_requests:
                 del self.active_requests[request_id]
