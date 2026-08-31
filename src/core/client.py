@@ -21,6 +21,7 @@ class OpenAIClient:
         fallback_base_url: Optional[str] = None,
         fallback_api_key: Optional[str] = None,
         fallback_model: Optional[str] = None,
+        max_retries: int = 2,
     ):
         self.api_key = api_key
         self.base_url = base_url
@@ -28,7 +29,8 @@ class OpenAIClient:
         self.fallback_base_url = fallback_base_url
         self.fallback_api_key = fallback_api_key
         self.fallback_model = fallback_model
-        
+        self.max_retries = max(0, max_retries)
+
         # Prepare default headers
         default_headers = {
             "Content-Type": "application/json",
@@ -81,25 +83,29 @@ class OpenAIClient:
             # Create task that can be cancelled with retry
             async def _create_with_retry():
                 last_err = None
-                for attempt in range(4):
+                for attempt in range(self.max_retries + 1):
                     try:
                         return await self.client.chat.completions.create(**request)
                     except Exception as err:
                         last_err = err
                         status = getattr(err, 'status_code', None)
-                        if status in (429, 500, 502, 503, 504) or 'overload' in str(err).lower() or 'concurrency' in str(err).lower():
-                            if attempt < 3:
-                                await asyncio.sleep(1.5 * (attempt + 1))
-                                continue
-                        # Try fallback provider if primary fails
-                        if self.fallback_client:
+                        retryable = (
+                            status in (429, 500, 502, 503, 504)
+                            or 'overload' in str(err).lower()
+                            or 'concurrency' in str(err).lower()
+                            or any(code in str(err).lower() for code in ("429", "500", "502", "503", "504"))
+                        )
+                        if retryable and attempt < self.max_retries:
+                            await asyncio.sleep(1.5 * (attempt + 1))
+                            continue
+                        if self.fallback_client and retryable:
                             fallback_req = dict(request)
                             if self.fallback_model:
                                 fallback_req["model"] = self.fallback_model
                             try:
                                 return await self.fallback_client.chat.completions.create(**fallback_req)
                             except Exception as fb_err:
-                                logger.debug("Fallback attempt failed: %s", fb_err)
+                                logger.debug("Fallback attempt failed: %s", type(fb_err).__name__)
                         raise
                 if last_err:
                     raise last_err
@@ -172,8 +178,8 @@ class OpenAIClient:
         except APIError as e:
             status_code = getattr(e, 'status_code', 500)
             raise HTTPException(status_code=status_code, detail=self.classify_openai_error(str(e)))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        except Exception:
+            raise HTTPException(status_code=500, detail="Unexpected upstream error")
         
         finally:
             # Clean up active request tracking
@@ -189,16 +195,36 @@ class OpenAIClient:
             self.active_requests[request_id] = cancel_event
         
         streaming_completion = None
+        stream_closed = False
+
+        async def close_stream_once() -> None:
+            nonlocal stream_closed
+            if streaming_completion is None or stream_closed:
+                return
+            stream_closed = True
+            if hasattr(streaming_completion, "aclose"):
+                try:
+                    await streaming_completion.aclose()
+                except Exception as e:
+                    logger.debug("Failed closing stream: %s", type(e).__name__)
+            elif hasattr(streaming_completion, "close"):
+                try:
+                    result = streaming_completion.close()
+                    if asyncio.iscoroutine(result):
+                        await result
+                except Exception as e:
+                    logger.debug("Failed closing stream: %s", type(e).__name__)
+
         try:
             # Ensure stream is enabled
+            request = dict(request)
             request["stream"] = True
-            if "stream_options" not in request:
-                request["stream_options"] = {}
+            request["stream_options"] = dict(request.get("stream_options") or {})
             request["stream_options"]["include_usage"] = True
             
             # Create the streaming completion with automatic retry and fallback
             last_error = None
-            for attempt in range(6):
+            for attempt in range(self.max_retries + 1):
                 try:
                     streaming_completion = await self.client.chat.completions.create(**request)
                     last_error = None
@@ -208,13 +234,22 @@ class OpenAIClient:
                     status = getattr(err, 'status_code', None)
                     err_str = str(err).lower()
                     if status in (429, 500, 502, 503, 504) or 'overload' in err_str or 'concurrency' in err_str or 'bad_response' in err_str:
-                        if attempt < 5:
+                        if attempt < self.max_retries:
                             await asyncio.sleep(1.5 * (attempt + 1))
                             continue
                     break
             
-            # If primary retries failed, attempt fallback provider if configured
-            if streaming_completion is None and self.fallback_client:
+            # Fallback is only appropriate for transient primary failures.
+            primary_status = getattr(last_error, "status_code", None)
+            primary_error = str(last_error).lower() if last_error else ""
+            primary_retryable = (
+                primary_status in (429, 500, 502, 503, 504)
+                or "overload" in primary_error
+                or "concurrency" in primary_error
+                or "bad_response" in primary_error
+                or any(code in primary_error for code in ("429", "500", "502", "503", "504"))
+            )
+            if streaming_completion is None and self.fallback_client and primary_retryable:
                 fallback_req = dict(request)
                 if self.fallback_model:
                     fallback_req["model"] = self.fallback_model
@@ -226,8 +261,9 @@ class OpenAIClient:
 
             # If all attempts exhausted
             if streaming_completion is None:
-                err_msg = self.classify_openai_error(str(last_error)) if last_error else "All upstream attempts exhausted"
-                yield f"ERROR::503::{err_msg}"
+                err_msg = self.classify_openai_error(last_error) if last_error else "All upstream attempts exhausted"
+                status = getattr(last_error, "status_code", 503) if last_error else 503
+                yield f"ERROR::{status}::{err_msg}"
                 return
             
             async for chunk in streaming_completion:
@@ -246,41 +282,16 @@ class OpenAIClient:
             yield "data: [DONE]"
                 
         except asyncio.CancelledError:
-            # When generator is cancelled / closed
-            if streaming_completion is not None:
-                if hasattr(streaming_completion, "close"):
-                    try:
-                        res = streaming_completion.close()
-                        if asyncio.iscoroutine(res):
-                            await res
-                    except Exception as e:
-                        logger.debug("Failed closing stream during cancellation: %s", e)
-                elif hasattr(streaming_completion, "aclose"):
-                    try:
-                        await streaming_completion.aclose()
-                    except Exception as e:
-                        logger.debug("Failed aclosing stream during cancellation: %s", e)
+            # Cleanup is centralized in finally so it runs exactly once.
             raise
         except Exception as e:
             # NEVER raise from inside an async generator used by StreamingResponse.
             # Yield an error marker that response_converter will handle gracefully.
             status = getattr(e, 'status_code', 500)
-            yield f"ERROR::{status}::{self.classify_openai_error(str(e))}"
+            yield f"ERROR::{status}::{self.classify_openai_error(e)}"
         
         finally:
-            if streaming_completion is not None:
-                if hasattr(streaming_completion, "close"):
-                    try:
-                        res = streaming_completion.close()
-                        if asyncio.iscoroutine(res):
-                            await res
-                    except Exception as e:
-                        logger.debug("Failed closing stream in finally: %s", e)
-                elif hasattr(streaming_completion, "aclose"):
-                    try:
-                        await streaming_completion.aclose()
-                    except Exception as e:
-                        logger.debug("Failed aclosing stream in finally: %s", e)
+            await close_stream_once()
             # Clean up active request tracking
             if request_id and request_id in self.active_requests:
                 del self.active_requests[request_id]
@@ -313,8 +324,8 @@ class OpenAIClient:
         if "connect" in error_str or "timeout" in error_str or "unreachable" in error_str:
             return "Unable to reach upstream provider. Please check network connectivity and base URL."
 
-        # Default: return sanitized string
-        return str(error_detail)
+        # Never expose raw provider errors, URLs, or credentials to clients.
+        return "Upstream provider request failed"
     
     def cancel_request(self, request_id: str) -> bool:
         """Cancel an active request by request_id."""

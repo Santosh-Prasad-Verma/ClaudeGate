@@ -2,6 +2,7 @@
 
 import re
 import os
+import copy
 from typing import Any, Dict, List
 
 # Patterns matching sensitive keys, tokens, and credentials
@@ -37,6 +38,7 @@ class SecretSanitizer:
         if not self.enabled or not messages:
             return messages
 
+        messages = copy.deepcopy(messages)
         for msg in messages:
             content = msg.get("content")
             if isinstance(content, str):
@@ -48,6 +50,8 @@ class SecretSanitizer:
                             block["text"] = self.sanitize_text(str(block.get("text", "")))
                         elif "text" in block and isinstance(block["text"], str):
                             block["text"] = self.sanitize_text(block["text"])
+                        elif "source" in block and isinstance(block["source"], dict):
+                            block["source"] = self._sanitize_value(block["source"])
 
             # Sanitize tool calls arguments
             if "tool_calls" in msg and isinstance(msg["tool_calls"], list):
@@ -58,6 +62,15 @@ class SecretSanitizer:
                             fn["arguments"] = self.sanitize_text(fn["arguments"])
 
         return messages
+
+    def _sanitize_value(self, value: Any) -> Any:
+        if isinstance(value, str):
+            return self.sanitize_text(value)
+        if isinstance(value, list):
+            return [self._sanitize_value(item) for item in value]
+        if isinstance(value, dict):
+            return {key: self._sanitize_value(item) for key, item in value.items()}
+        return value
 
 # Global sanitizer instance controlled by SANITIZE_SECRETS in .env
 sanitizer = SecretSanitizer(enabled=os.environ.get("SANITIZE_SECRETS", "false").lower() in ("true", "1", "yes"))

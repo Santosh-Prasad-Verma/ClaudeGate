@@ -66,6 +66,10 @@ def convert_openai_to_claude_response(
     }.get(finish_reason, Constants.STOP_END_TURN)
 
     # Build Claude response
+    usage = openai_response.get("usage") or {}
+    if not isinstance(usage, dict):
+        usage = {}
+
     claude_response = {
         "id": openai_response.get("id", f"msg_{uuid.uuid4()}"),
         "type": "message",
@@ -75,10 +79,8 @@ def convert_openai_to_claude_response(
         "stop_reason": stop_reason,
         "stop_sequence": None,
         "usage": {
-            "input_tokens": openai_response.get("usage", {}).get("prompt_tokens", 0),
-            "output_tokens": openai_response.get("usage", {}).get(
-                "completion_tokens", 0
-            ),
+            "input_tokens": usage.get("prompt_tokens", 0),
+            "output_tokens": usage.get("completion_tokens", 0),
         },
     }
 
@@ -112,7 +114,7 @@ async def convert_openai_streaming_to_claude(
                 if line.startswith("ERROR::"):
                     parts = line.split("::", 2)
                     error_msg = parts[2] if len(parts) > 2 else "Unknown upstream error"
-                    error_event = {"type": "error", "error": {"type": "api_error", "message": error_msg}}
+                    error_event = {"type": "error", "error": {"type": "api_error", "message": "Upstream provider request failed"}}
                     yield f"event: error\ndata: {json.dumps(error_event, ensure_ascii=False)}\n\n"
                     yield f"event: {Constants.EVENT_CONTENT_BLOCK_STOP}\ndata: {json.dumps({'type': Constants.EVENT_CONTENT_BLOCK_STOP, 'index': text_block_index}, ensure_ascii=False)}\n\n"
                     yield f"event: {Constants.EVENT_MESSAGE_DELTA}\ndata: {json.dumps({'type': Constants.EVENT_MESSAGE_DELTA, 'delta': {'stop_reason': 'end_turn', 'stop_sequence': None}, 'usage': {'input_tokens': 0, 'output_tokens': 0}}, ensure_ascii=False)}\n\n"
@@ -211,13 +213,10 @@ async def convert_openai_streaming_to_claude(
         return
     except Exception as e:
         # Handle any streaming errors gracefully
-        logger.error(f"Streaming error: {e}")
-        import traceback
-
-        logger.error(traceback.format_exc())
+        logger.error("Streaming error: %s", type(e).__name__)
         error_event = {
             "type": "error",
-            "error": {"type": "api_error", "message": f"Streaming error: {str(e)}"},
+            "error": {"type": "api_error", "message": "Streaming error from upstream provider"},
         }
         yield f"event: error\ndata: {json.dumps(error_event, ensure_ascii=False)}\n\n"
         return
@@ -274,7 +273,7 @@ async def convert_openai_streaming_to_claude_with_cancellation(
                     parts = line.split("::", 2)
                     error_code = parts[1] if len(parts) > 1 else "500"
                     error_msg = parts[2] if len(parts) > 2 else "Unknown upstream error"
-                    logger.error(f"Upstream error ({error_code}): {error_msg}")
+                    logger.error("Upstream stream failed with status %s", error_code)
                     
                     error_type = "overloaded_error" if error_code in ("503", "502", "504", "429") else "api_error"
                     error_event = {"type": "error", "error": {"type": error_type, "message": error_msg}}
@@ -405,13 +404,10 @@ async def convert_openai_streaming_to_claude_with_cancellation(
         return
     except Exception as e:
         # Handle any streaming errors gracefully
-        logger.error(f"Streaming error: {e}")
-        import traceback
-
-        logger.error(traceback.format_exc())
+        logger.error("Streaming error: %s", type(e).__name__)
         error_event = {
             "type": "error",
-            "error": {"type": "api_error", "message": f"Streaming error: {str(e)}"},
+            "error": {"type": "api_error", "message": "Streaming error from upstream provider"},
         }
         yield f"event: error\ndata: {json.dumps(error_event, ensure_ascii=False)}\n\n"
         return
