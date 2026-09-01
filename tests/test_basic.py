@@ -119,3 +119,25 @@ def test_model_manager_tiers():
     assert model_manager.map_claude_model_to_openai("claude-haiku-4") == model_manager.config.small_model
     assert model_manager.map_claude_model_to_openai("claude-3-5-haiku-20241022") == model_manager.config.small_model
 
+
+def test_claude_code_extended_payload():
+    payload = {
+        "model": "claude-3-7-sonnet-20250219",
+        "max_tokens": 4096,
+        "messages": [
+            {"role": "user", "content": "hello"},
+            {"role": "system", "content": [{"type": "text", "text": "system context block"}]},
+        ],
+        "context_management": {"edits": [{"type": "clear_thinking_20251015", "keep": "all"}]},
+        "output_config": {"effort": "high"},
+    }
+    claude_req = ClaudeMessagesRequest(**payload)
+    assert claude_req.context_management is not None
+    assert claude_req.output_config is not None
+    openai_req = convert_claude_to_openai(claude_req, model_manager)
+    assert len(openai_req["messages"]) == 2
+    assert openai_req["messages"][0]["role"] == "user"
+    assert openai_req["messages"][1]["role"] == "user"
+    assert "[System Note]: system context block" in openai_req["messages"][1]["content"]
+
+

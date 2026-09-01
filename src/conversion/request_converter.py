@@ -9,6 +9,38 @@ from src.security.sanitizer import sanitizer
 logger = logging.getLogger(__name__)
 
 
+def extract_text_from_content(content: Any) -> str:
+    """Extract clean string text from various Claude content formats."""
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                if block.strip():
+                    parts.append(block.strip())
+            elif isinstance(block, dict):
+                if block.get("text"):
+                    parts.append(str(block["text"]).strip())
+                elif block.get("content"):
+                    parts.append(str(block["content"]).strip())
+            elif hasattr(block, "text") and block.text:
+                parts.append(str(block.text).strip())
+        return "\n\n".join(parts)
+    if isinstance(content, dict):
+        if content.get("text"):
+            return str(content["text"]).strip()
+        if content.get("content"):
+            return str(content["content"]).strip()
+        try:
+            return json.dumps(content, ensure_ascii=False)
+        except Exception:
+            return str(content)
+    return str(content)
+
+
 def convert_claude_to_openai(
     claude_request: ClaudeMessagesRequest, model_manager: Any
 ) -> Dict[str, Any]:
@@ -22,23 +54,9 @@ def convert_claude_to_openai(
 
     # 1. Collect system prompt from claude_request.system
     if claude_request.system:
-        if isinstance(claude_request.system, str):
-            if claude_request.system.strip():
-                system_parts.append(claude_request.system.strip())
-        elif isinstance(claude_request.system, list):
-            for block in claude_request.system:
-                if isinstance(block, str) and block.strip():
-                    system_parts.append(block.strip())
-                elif hasattr(block, "text") and block.text:
-                    system_parts.append(block.text.strip())
-                elif isinstance(block, dict):
-                    if block.get("text"):
-                        system_parts.append(str(block["text"]).strip())
-                    elif block.get("content"):
-                        system_parts.append(str(block["content"]).strip())
-        elif isinstance(claude_request.system, dict):
-            if claude_request.system.get("text"):
-                system_parts.append(str(claude_request.system["text"]).strip())
+        system_text = extract_text_from_content(claude_request.system)
+        if system_text.strip():
+            system_parts.append(system_text.strip())
 
     # 2. Process Claude messages and ensure no system messages are placed after user/assistant
     i = 0
@@ -49,7 +67,7 @@ def convert_claude_to_openai(
         role = msg.role.lower() if isinstance(msg.role, str) else str(msg.role)
 
         if role in (Constants.ROLE_SYSTEM, "system"):
-            content_str = msg.content if isinstance(msg.content, str) else json.dumps(msg.content, ensure_ascii=False)
+            content_str = extract_text_from_content(msg.content)
             if not non_system_started:
                 if content_str.strip():
                     system_parts.append(content_str.strip())
