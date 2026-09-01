@@ -25,7 +25,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi>=0.140.0",
     "uvicorn[standard]>=0.32.0",
     "pydantic>=2.10.0",
     "openai>=1.60.0",

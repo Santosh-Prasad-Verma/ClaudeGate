@@ -50,5 +50,8 @@ htmlcov/
 *~
 .DS_Store
 
+# Private local planning
+plan.md
+
 # Temporary request logs
 /tmp/claude_last_request.json
