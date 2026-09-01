@@ -122,7 +122,7 @@ def test_model_manager_tiers():
 
 def test_claude_code_extended_payload():
     payload = {
-        "model": "claude-3-7-sonnet-20250219",
+        "model": "claude-opus-5",
         "max_tokens": 4096,
         "messages": [
             {"role": "user", "content": "hello"},
