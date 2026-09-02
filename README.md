@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="./assets/ClaudeGate.png" alt="ClaudeGate Logo" width="350" style="border-radius: 16px;">
+  <img src="./assets/ClaudeGate.png" alt="ClaudeGate Logo" width="320" style="border-radius: 16px;">
 </p>
 
 <h1 align="center">ClaudeGate</h1>
 
 <p align="center">
-  <strong>High-Performance Universal Bridge connecting Claude Code CLI & Anthropic SDKs to ANY AI Model.</strong><br>
-  <em>Zero-crash streaming, multi-provider failover, chain-of-thought sanitization, PII redactor, and 24+ provider presets.</em>
+  <strong>Use Claude Code CLI with ANY AI Model — 100% Free, Local, or Cloud.</strong><br>
+  <em>A fast, lightweight local bridge that connects Anthropic's Claude Code CLI to DeepSeek, Ollama, OpenAI, Gemini, Groq, OpenRouter, and more.</em>
 </p>
 
 <p align="center">
@@ -18,52 +18,52 @@
 
 ---
 
-## 📑 Table of Contents
+## 🌟 What is ClaudeGate?
 
-- [📌 1. Project Overview](#-1-project-overview)
-- [📸 2. Live Demo & Terminal Previews](#-2-live-demo--terminal-previews)
-- [✨ 3. Features](#-3-features)
-- [🛠️ 4. Tech Stack](#️-4-tech-stack)
-- [🏗️ 5. Architecture](#️-5-architecture)
-- [📁 6. Project Structure](#-6-project-structure)
-- [⚙️ 7. Installation and Setup](#️-7-installation-and-setup)
-- [🚀 8. Usage & User Flow](#-8-usage--user-flow)
-- [🧪 9. Testing & Diagnostics](#-9-testing--diagnostics)
-- [🔒 10. Security & Privacy Safeguards](#-10-security--privacy-safeguards)
-- [💡 11. Engineering Decisions](#-11-engineering-decisions)
-- [🔮 12. Limitations and Future Improvements](#-12-limitations-and-future-improvements)
-- [🤝 13. Contributing & Code of Conduct](#-13-contributing--code-of-conduct)
-- [📄 14. License](#-14-license)
+[Claude Code CLI](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) is an incredible terminal assistant made by Anthropic that can read your files, write code, run terminal commands, and fix bugs autonomously. 
 
----
+However, **Claude Code is normally locked to Anthropic's official Claude models**, which require paid Anthropic API credits and cannot run offline.
 
-## 📌 1. Project Overview
+**ClaudeGate is a local translator for your computer.** It sits quietly in the background on your machine. When Claude Code sends a request, ClaudeGate translates it in real-time into standard OpenAI format, sends it to **any AI provider of your choice**, and streams the answer right back to your terminal.
 
-[Claude Code CLI](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) is one of the most capable agentic coding tools available today. However, it is natively locked to Anthropic's commercial cloud endpoints.
+```text
+┌─────────────────┐       ┌─────────────────┐       ┌───────────────────────────────┐
+│                 │       │                 │       │  Any AI Model You Choose:     │
+│ Claude Code CLI │ ────► │   ClaudeGate    │ ────► │  • 🆓 Free Cloud (DeepSeek/Groq)│
+│ (In your repo)  │ ◄──── │ (Local Proxy)   │ ◄──── │  • 🔒 100% Local (Ollama)     │
+│                 │       │                 │       │  • ⚡ Cloud (OpenAI/Gemini/OR) │
+└─────────────────┘       └─────────────────┘       └───────────────────────────────┘
+```
 
-**ClaudeGate** is a lightweight, high-throughput, and secure local API gateway that bridges Anthropic's Messages API protocol (`/v1/messages` and `/v1/messages/count_tokens`) into standard OpenAI-compatible Chat Completions. 
-
-With ClaudeGate, developers can power Claude Code CLI, Cursor, and Anthropic SDK applications using:
-- 🆓 **Free & Frontier AI Cloud Models**: Stealth Ox Alpha, OpenRouter (Claude Opus 5 / Sonnet 5 / Haiku 4.5), OpenAI (GPT-5.6 Sol / Terra / Luna), DeepSeek (V4-Pro & V4-Flash), Google Gemini (3.1 Pro / 3.7 Flash / 3.5 Flash-Lite), Alibaba Qwen (Qwen3.8-Max / Qwen3.7-Plus / Qwen3.8-27B), Moonshot Kimi (K3 2.8T & K2.7 Code), Meta (Muse Spark 1.2 & Muse Glimmer), Z.ai GLM (GLM-5.3 & GLM-5-Turbo), MiniMax (M3 & M2.7), Cohere (Command A+ / A / R7B), Mistral (Large 3 / Medium 3.5 / Small 4), Perplexity (Sonar Reasoning Pro).
-- 🔒 **100% Private Local Offline Models**: Ollama, LM Studio, vLLM (DeepSeek V4-Pro quantized, Qwen3.6-35B-A3B, Muse Glimmer - zero data leaves your machine).
-- 🧠 **Next-Gen Model Mapping**: Seamlessly routes all Claude versions (Claude 3.5, 3.7, 4.x, 4.5, 5.x, Fable, Mythos) to your configured `BIG_MODEL`, `MIDDLE_MODEL`, and `SMALL_MODEL` tiers or passes through direct model slugs.
-- 🏢 **Enterprise Private Deployments**: Azure OpenAI Service, AWS Amazon Q (via Kiro Bridge), Meta Muse Spark.
+Claude Code gets the full power of an autonomous coding agent, while you get complete freedom over which AI model powers it!
 
 ---
 
-## 📸 2. Live Demo & Terminal Previews
+## 💡 Why Use ClaudeGate?
 
-ClaudeGate in active operation, translating Claude Code CLI tool calls, bash commands, and streaming tokens in real-time:
+| 🚫 Without ClaudeGate | ✨ With ClaudeGate |
+|---|---|
+| Locked only to Anthropic Claude models | Use **any AI model**: DeepSeek, OpenAI, Gemini, Qwen, Mistral, etc. |
+| Must pay Anthropic API credit rates | Use **free tiers**, low-cost providers, or your existing API keys |
+| All your code is sent to Anthropic's cloud | Run **100% offline & private** on your own computer with **Ollama** |
+| Session crashes if an API rate-limit hits | **Automatic failover**: switches to a backup model seamlessly |
+| Risk of accidental API key leaks in prompts | **Secret Redaction**: scrubs passwords, tokens, and SSH keys automatically |
+
+---
+
+## 📸 See It In Action
+
+ClaudeGate actively translating Claude Code commands, tool calls, and streaming responses in real time:
 
 <div align="center">
   <table>
     <tr>
       <td align="center" width="50%">
-        <strong>⚡ ClaudeGate Proxy Gateway</strong><br>
+        <strong>⚡ 1. ClaudeGate Running in Terminal 1</strong><br>
         <img src="./assets/proxy_terminal.png" alt="ClaudeGate Proxy Terminal" width="100%">
       </td>
       <td align="center" width="50%">
-        <strong>🤖 Claude Code CLI in Action</strong><br>
+        <strong>🤖 2. Claude Code Working in Terminal 2</strong><br>
         <img src="./assets/claude_terminal_ss.png" alt="Claude Code CLI Terminal" width="100%">
       </td>
     </tr>
@@ -72,160 +72,62 @@ ClaudeGate in active operation, translating Claude Code CLI tool calls, bash com
 
 ---
 
-## ✨ 3. Features
+## ⚡ Quick Start (Up & Running in 3 Minutes)
 
-- ⚡ **Zero-Crash SSE Streaming**: Translates raw OpenAI chunk streams into Anthropic Server-Sent Events (`content_block_start`, `content_block_delta`, `message_delta`, `message_stop`). Mid-stream disconnects and upstream errors are caught gracefully without crashing Starlette/ASGI.
-- 🔄 **Automatic Multi-Provider Failover**: Seamlessly fails over from primary upstream to backup providers (e.g. OpenRouter $\rightarrow$ Groq $\rightarrow$ local Ollama) on transient `503`, `429`, or timeout errors without dropping the active client session.
-- 🛡️ **PII & Secret Sanitizer**: Intercepts outgoing prompts and automatically scrubs AWS keys, GitHub PATs, OpenAI tokens, and SSH private keys before requests leave your computer (`SANITIZE_SECRETS=true`).
-- 🛠️ **Full Bi-directional Tool / Function Calling**: Seamlessly translates Claude Code file-system operations, terminal commands, and search tools into OpenAI function calls and vice versa.
-- 🧹 **Chain-of-Thought / `<thinking>` Sanitizer**: Cleanses internal reasoning tokens and `<thinking>` blocks from conversation history so multi-turn reasoning models (like DeepSeek R1/V4) never trigger `400 Bad Request` errors on follow-up turns.
-- ⏳ **Extended 10-Minute Keep-Alive**: Tuned TCP socket lifespan (`timeout_keep_alive=600`) to prevent Node.js `ECONNRESET` drops during prolonged user typing pauses.
-- 🎛️ **Universal CLI Tooling**: Interactive setup wizard (`--setup`), live connectivity diagnostic (`--test`), and 24+ instant preset switches (`--preset <name>`).
-- 🐳 **Docker & Compose Ready**: Run as a standalone daemon container with health-check monitoring.
+### Step 1: Install ClaudeGate
 
----
-
-## 🛠️ 4. Tech Stack
-
-- **Backend Framework**: [FastAPI](https://fastapi.tiangolo.com/) (High-performance async ASGI web framework)
-- **ASGI Server**: [Uvicorn](https://www.uvicorn.org/) (Configured with custom socket keep-alives and signal handling)
-- **Data Validation & Schemas**: [Pydantic v2](https://docs.pydantic.dev/) (Strict type serialization for Anthropic & OpenAI payloads)
-- **HTTP Clients**: [httpx](https://www.python-httpx.org/) & [openai-python](https://github.com/openai/openai-python) (Async connection pooling and streaming response parsing)
-- **Security & Crypto**: Python `hmac` (Constant-time token authentication) and Regex Token Redaction Engine
-- **Containerization**: Docker & Docker Compose (Multi-stage Python slim base image)
-
----
-
-## 🏗️ 5. Architecture
-
-ClaudeGate sits transparently between Claude Code CLI and your chosen AI model provider:
-
-```mermaid
-flowchart LR
-    A["Claude Code CLI\nor Anthropic SDK"] -- "POST /v1/messages\n(Anthropic Schema)" --> B["ClaudeGate Gateway\n(FastAPI / Port 8082)"]
-    
-    subgraph CoreEngine ["ClaudeGate Core Engine"]
-        B --> C["Constant-Time Auth & IP Validator"]
-        C --> D["Request Sanitizer\n(PII & Credential Redaction)"]
-        D --> E["Protocol Converter\n(Tools, Messages, System Prompts)"]
-        E --> F["Upstream Client & Failover Controller"]
-    end
-    
-    subgraph Upstream ["Upstream AI Providers"]
-        F -- "Primary Request" --> G["Primary Provider\n(OpenRouter / DeepSeek / Gemini)"]
-        F -. "Auto Failover on 503/429" .-> H["Backup Provider\n(Groq / Local Ollama)"]
-    end
-    
-    G -- "OpenAI Chunk Stream" --> I["SSE Stream Adapter\n(Zero-Crash Generator)"]
-    H -- "OpenAI Chunk Stream" --> I
-    I -- "Anthropic SSE Events" --> A
-```
-
----
-
-## 📁 6. Project Structure
-
-```text
-ClaudeGate/
-├── assets/                    # Visual assets and screenshots
-│   ├── ClaudeGate.png         # Project Banner & Logo
-│   ├── claude_terminal_ss.png # Claude Code CLI in action
-│   └── proxy_terminal.png     # ClaudeGate terminal proxy log
-├── Dockerfile                 # Container image specification
-├── docker-compose.yml         # Container service configuration
-├── requirements.txt           # Python package dependencies
-├── pyproject.toml             # Modern package build configuration
-├── setup.py                   # Legacy pip install compatibility
-├── start_proxy.py             # CLI & Server launcher script
-├── .env.example               # Comprehensive environment template
-├── LICENSE                    # MIT License
-├── SECURITY.md                # Security policy & reporting guidelines
-├── CODE_OF_CONDUCT.md         # Community standard of conduct
-├── CONTRIBUTING.md            # Contribution guidelines
-├── CHANGELOG.md               # Version release history
-├── README.md                  # Project documentation
-│
-├── presets/                   # Ready-to-use provider templates
-│   ├── openrouter.env         # OpenRouter (Claude Opus 5, Sonnet 5, Haiku 4.5)
-│   ├── groq.env               # Groq (DeepSeek V4-Pro, Llama 4 Maverick, Muse Glimmer)
-│   ├── ollama.env             # Ollama (100% Local DeepSeek V4-Pro, Qwen3.6-35B, Muse Glimmer)
-│   ├── deepseek.env           # DeepSeek (DeepSeek V4-Pro & V4-Flash)
-│   ├── gemini.env             # Google Gemini (Gemini 3.1 Pro, 3.7 Flash & 3.5 Flash-Lite)
-│   ├── openai.env             # OpenAI Official (GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna)
-│   ├── kimi.env               # Moonshot AI (Kimi K3 2.8T Reasoning & K2.7 Code)
-│   ├── qwen.env               # Alibaba Qwen / DashScope (Qwen3.8-Max, Qwen3.7-Plus, Qwen3.8-27B)
-│   ├── mistral.env            # Mistral AI (Mistral Large 3, Mistral Medium 3.5, Mistral Small 4)
-│   ├── perplexity.env         # Perplexity (Sonar Reasoning Pro, Sonar Pro & Sonar)
-│   ├── cohere.env             # Cohere (Command A+, Command A & Command R7B)
-│   ├── minimax.env            # MiniMax (MiniMax M3 Frontier & MiniMax M2.7)
-│   ├── meta.env               # Meta AI (Muse Spark 1.2, Llama 4 Maverick, Muse Glimmer)
-│   ├── zai.env                # Z.ai / Zhipu GLM (GLM-5.3 Flagship, GLM-5-Turbo, GLM-4.7-Flash)
-│   ├── together.env           # Together AI (DeepSeek V4-Pro, DeepSeek V4-Flash, Qwen3.8-27B)
-│   ├── fireworks.env          # Fireworks AI (DeepSeek V4-Pro, DeepSeek V4-Flash, Qwen3.8-27B)
-│   ├── cerebras.env           # Cerebras (DeepSeek V4-Pro, Llama 4 Maverick, Muse Glimmer)
-│   ├── sambanova.env          # SambaNova Cloud (DeepSeek V4-Pro, Llama 4 Maverick, Qwen3.8-27B)
-│   ├── siliconflow.env        # SiliconFlow (DeepSeek V4-Pro, DeepSeek V4-Flash, Qwen3.8-27B)
-│   ├── lmstudio.env           # LM Studio Desktop (DeepSeek V4-Pro & Muse Glimmer)
-│   ├── vllm.env               # vLLM Self-Hosted GPU (DeepSeek V4-Pro & Qwen3.6-35B)
-│   ├── azure.env              # Azure OpenAI Service (o1 & GPT-5.6 Enterprise Deployments)
-│   ├── kiro.env               # AWS Amazon Q Developer / Claude Opus 5 Bridge
-│   ├── ox.env                 # Stealth Ox Alpha (Frontier Reasoning Model)
-│   └── nemotron.env           # Nvidia Nemotron Free Tier
-│
-├── scripts/                   # Verification & test utilities
-│   ├── verify_failover.py     # Automated failover simulation runner
-│   └── test_live_nemotron_ox.py # Live dual-model probe (Nemotron & Ox Alpha)
-│
-└── src/                       # Source code
-    ├── main.py                # FastAPI app & Uvicorn lifecycle
-    ├── cli.py                 # CLI commands, setup wizard & test runner
-    ├── api/
-    │   └── endpoints.py       # /v1/messages, /health & /count_tokens routes
-    ├── conversion/
-    │   ├── request_converter.py   # Anthropic -> OpenAI message & tool parsing
-    │   └── response_converter.py  # OpenAI stream -> Anthropic SSE translation
-    ├── core/
-    │   ├── client.py          # Async client with failover & retry logic
-    │   ├── config.py          # Dynamic environment loader & constant-time auth
-    │   ├── constants.py       # Anthropic & OpenAI protocol constants
-    │   ├── logging.py         # Structured logging configuration
-    │   └── model_manager.py   # Intelligent model tier & slug router
-    ├── models/
-    │   ├── claude.py          # Pydantic schemas for Anthropic API
-    │   └── openai.py          # Pydantic schemas for OpenAI API
-    └── security/
-        └── sanitizer.py       # Secret, AWS key, and PAT redaction engine
-```
-
----
-
-## ⚙️ 7. Installation and Setup
-
-### Step 1: Clone Repository & Create Environment
 ```bash
+# Clone the repository
 git clone https://github.com/Santosh-Prasad-Verma/ClaudeGate.git
 cd ClaudeGate
 
+# Set up Python virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
+
+# Install requirements
 pip install -r requirements.txt
 ```
 
-### Step 2: Configure Your Upstream Provider
-Launch the interactive configuration wizard:
+---
+
+### Step 2: Choose Your AI Provider
+
+You can configure your AI provider in **one command**:
+
+#### Option A: Interactive Setup Wizard
 ```bash
 python start_proxy.py --setup
 ```
-*Or load a ready-made preset directly:*
+*Follow the on-screen menu to choose from 24+ providers (Ollama, DeepSeek, Groq, Gemini, OpenRouter, etc.) and enter your API key.*
+
+#### Option B: Load a Preset Directly
 ```bash
+# For 100% Free / Local Ollama (no API key needed!):
+python start_proxy.py --preset ollama
+
+# For DeepSeek Official:
+python start_proxy.py --preset deepseek
+
+# For Groq (Ultra-Fast):
+python start_proxy.py --preset groq
+
+# For Google Gemini:
+python start_proxy.py --preset gemini
+
+# For OpenRouter:
 python start_proxy.py --preset openrouter
 ```
+*(If the provider requires an API key, edit `.env` and paste your key).*
 
-### Step 3: Configure Claude Code CLI
-You can configure Claude Code CLI to communicate with ClaudeGate using either **Permanent** or **Session-Based** configuration:
+---
 
-#### Option A: Permanent Configuration (Recommended)
-Edit (or create) `~/.claude/settings.json` to automatically route all future `claude` commands to ClaudeGate:
+### Step 3: Tell Claude Code to Use ClaudeGate
+
+Configure Claude Code to talk to ClaudeGate (`http://127.0.0.1:8082`) instead of Anthropic:
+
+#### 🔹 Permanent Setup (Recommended)
+Add this to your Claude Code settings file (`~/.claude/settings.json`):
 ```json
 {
   "env": {
@@ -235,122 +137,127 @@ Edit (or create) `~/.claude/settings.json` to automatically route all future `cl
 }
 ```
 
-#### Option B: Session-Based (Current Terminal Only)
-Export the variables in your active shell before launching Claude:
+#### 🔹 Temporary Setup (Current Terminal Window Only)
+Run these commands in your terminal before launching Claude:
 ```bash
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8082"
 export ANTHROPIC_API_KEY="sk-claudegate-local"
 ```
 
-### Step 4: ✅ Verify It's Running
-Run the built-in diagnostic test to verify your upstream provider connection and measure latency:
-```bash
-python start_proxy.py --test
-```
-*Expected Output:*
-```text
-🔍 Testing upstream connection...
-   Provider Base URL: https://openrouter.ai/api/v1
-   Test Model:        stealth/ox-alpha
-✅ Connection Successful! Model is active and responsive.
-   Status: 200 OK
-```
+---
 
-You can also probe the gateway health endpoint directly from your terminal:
-```bash
-curl http://127.0.0.1:8082/health
-# {"status":"healthy","service":"claudegate"}
-```
+### Step 4: Test & Run!
+
+1. **Verify your connection:**
+   ```bash
+   python start_proxy.py --test
+   ```
+   *You should see `✅ Connection Successful!`.*
+
+2. **Start ClaudeGate (keep this running in Terminal 1):**
+   ```bash
+   python start_proxy.py
+   ```
+
+3. **Open another terminal in your project (Terminal 2) and code with Claude:**
+   ```bash
+   cd ~/path/to/my-coding-project
+   claude
+   ```
+
+🎉 **That's it!** You can now give instructions like *"Refactor the auth module and add unit tests"* and Claude Code will execute them using your chosen backend AI model!
 
 ---
 
-## 🚀 8. Usage & User Flow
+## 🎮 Everyday Workflow
 
-### 🧭 End-to-End User Flow (How It Works in Practice)
-
-Once setup is complete, your day-to-day workflow looks like this:
+Here is what your normal daily coding routine looks like:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  TERMINAL 1: Start ClaudeGate Gateway Daemon                                │
+│  TERMINAL 1: Run ClaudeGate                                                 │
 │  $ cd ClaudeGate && python start_proxy.py                                   │
-│  [Gateway listening on http://127.0.0.1:8082 (OpenRouter/Groq/Ollama)]       │
+│  ➜ ClaudeGate is listening on http://127.0.0.1:8082                         │
 └──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ (Translates Anthropic ⟷ OpenAI protocol)
+                                       │ (Translates requests in the background)
                                        ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  TERMINAL 2: Your Codebase Workspace (Run Claude Code)                       │
-│  $ cd /path/to/my-project                                                   │
+│  TERMINAL 2: Your Code Workspace                                            │
+│  $ cd ~/my-awesome-app                                                      │
 │  $ claude                                                                   │
 │                                                                             │
-│  > "Add JWT authentication to src/auth.py and run the unit tests"           │
+│  > "Fix the bug in src/api.py where users get a 500 error on login"          │
 │                                                                             │
-│  Claude Code ──────► ClaudeGate (8082) ──────► DeepSeek R1 / Qwen / Groq    │
-│  (CLI Tool Calls)   (Translates schemas)       (Executes inference & tools) │
-│  ◄────────────────── (Streams SSE Events) ◄──────────────────────────────── │
-│                                                                             │
-│  ✅ Claude Code automatically reads files, writes code, and runs bash tests! │
+│  Claude Code ──► ClaudeGate (8082) ──► DeepSeek / Ollama / OpenAI / Gemini  │
+│  (Reads files, edits code, runs tests, creates git commits automatically)   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Step-by-Step Daily Execution:
-
-1. **Start the Gateway (Terminal 1)**:
-   ```bash
-   cd ClaudeGate
-   python start_proxy.py
-   ```
-   *ClaudeGate will boot up, display active model mappings, and listen on `http://127.0.0.1:8082`.*
-
-2. **Open Your Coding Project (Terminal 2)**:
-   Navigate to whatever software project or repo you want to work on:
-   ```bash
-   cd ~/my-flutter-app   # or any project directory
-   ```
-
-3. **Launch Claude Code**:
-   ```bash
-   claude
-   ```
-   *You can now type natural language instructions as usual. Claude Code will execute file inspections, bash commands, multi-file edits, and git commits powered entirely by your chosen backend model!*
-
-4. **Switching Models On The Fly**:
-   Want to swap from free cloud models (OpenRouter) to 100% private offline models (Ollama)?
-   In Terminal 1:
-   ```bash
-   python start_proxy.py --preset ollama
-   python start_proxy.py
-   ```
-   *Claude Code in Terminal 2 will immediately begin routing through local Ollama without needing a restart.*
+> 💡 **Tip:** You can switch models anytime in Terminal 1 using `python start_proxy.py --preset <provider>` without having to restart Claude Code!
 
 ---
 
-### 💻 CLI Utilities & Commands
+## 🔌 Supported Providers & Presets
 
-| Command | Purpose |
+ClaudeGate includes 28+ ready-to-use presets in the `presets/` folder:
+
+| Category | Provider | Preset Name | Best For |
+|---|---|---|---|
+| 🔒 **100% Offline & Private** | **Ollama** | `ollama` | Zero data leaves your computer. Completely free. |
+| | **LM Studio** | `lmstudio` | Easy desktop GUI for running local models. |
+| | **vLLM** | `vllm` | High-speed self-hosted GPU servers. |
+| ⚡ **Popular Cloud Providers** | **DeepSeek** | `deepseek` | Outstanding coding performance & low cost. |
+| | **Google Gemini** | `gemini` | Huge context window & fast speeds. |
+| | **Groq** | `groq` | Blazing-fast inference speeds. |
+| | **OpenAI** | `openai` | GPT-4o, o1, and latest OpenAI models. |
+| | **OpenRouter** | `openrouter` | Access to 100+ models with one API key. |
+| | **Mistral AI** | `mistral` | Mistral Large and Codestral models. |
+| | **Moonshot Kimi** | `kimi` | Strong reasoning & coding capabilities. |
+| | **Alibaba Qwen** | `qwen` | Top-tier open weights coding models. |
+| | **Perplexity** | `perplexity` | Search-grounded reasoning models. |
+| | **Together / Fireworks** | `together` / `fireworks` | High-throughput open-source hosting. |
+| 🏢 **Enterprise** | **Azure OpenAI** | `azure` | Corporate Azure cloud deployments. |
+| | **AWS Amazon Q** | `kiro` | Amazon Q developer bridge. |
+
+---
+
+## 🛡️ Smart Features
+
+ClaudeGate comes packed with smart features designed specifically for agentic coding:
+
+- 🛠️ **Full Tool & Function Calling**: Claude Code can inspect folders, read and write files, run terminal commands, and use web search without missing a beat.
+- 🔄 **Automatic Failover**: If your main cloud provider has a temporary outage (`503`) or hits rate limits (`429`), ClaudeGate instantly retries with your backup provider so you don't lose your work.
+- 🧹 **Reasoning Tag Cleaner**: Models like DeepSeek R1 output `<thinking>` tags. ClaudeGate cleans these up between conversation turns so follow-up prompts never fail with `400 Bad Request`.
+- 🔒 **PII & Secret Redaction**: Set `SANITIZE_SECRETS="true"` in `.env` to automatically scrub AWS keys, GitHub tokens, passwords, and private SSH keys from prompts before they leave your machine.
+- 🌊 **Zero-Crash Streaming**: Real-time SSE streaming ensures that even if you cancel a prompt mid-stream, your local server stays rock-solid.
+- ⏳ **Extended Keep-Alive**: Prevents connection timeouts (`ECONNRESET`) when you spend a few minutes reading code before typing your next instruction.
+
+---
+
+## 🎛️ Command Cheat Sheet
+
+| Command | What it does |
 |---|---|
-| `python start_proxy.py` | Start the ClaudeGate server |
-| `python start_proxy.py --test` | Run live connectivity probe & measure upstream latency |
-| `python start_proxy.py --setup` | Launch interactive 24-provider setup wizard |
-| `python start_proxy.py --preset <name>` | Quick-load a preset (e.g. `groq`, `gemini`, `ollama`, `deepseek`) |
-| `python start_proxy.py --help` | View help and available options |
-| `python start_proxy.py --version` | Display current release version |
+| `python start_proxy.py` | Starts the ClaudeGate proxy server |
+| `python start_proxy.py --setup` | Interactive configuration wizard (choose provider & enter key) |
+| `python start_proxy.py --preset <name>` | Quickly switches to a preset (e.g. `ollama`, `deepseek`, `groq`) |
+| `python start_proxy.py --test` | Tests if your upstream provider is connected and working |
+| `python start_proxy.py --version` | Shows the current version |
+| `python start_proxy.py --help` | Shows help and all available flags |
+| `curl http://127.0.0.1:8082/health` | Checks if ClaudeGate is healthy |
 
 ---
 
-### 🐳 Running with Docker
+## 🐳 Running with Docker (Optional)
 
-If you prefer to run ClaudeGate as a background Docker container:
+If you prefer running ClaudeGate in a Docker container:
 
 ```bash
-# Build and start container in the background
+# Start container in background
 docker compose up -d --build
 
-# View real-time logs
+# View live logs
 docker compose logs -f
-
-# Check container health status
-docker ps
 
 # Stop container
 docker compose down
@@ -358,108 +265,63 @@ docker compose down
 
 ---
 
-## 🧪 9. Testing & Diagnostics
+## ❓ Frequently Asked Questions (FAQ)
 
-ClaudeGate includes built-in live diagnostics and automated test suites:
+<details>
+<summary><strong>1. Do I need an Anthropic Claude subscription or API key?</strong></summary>
 
-### 1. Upstream Connectivity & Latency Probe
-Test your active model and measure upstream response latency:
+**No!** You do not need an Anthropic subscription or paid API key. ClaudeGate lets you power Claude Code CLI entirely with other providers (like DeepSeek, OpenAI, Gemini, or even 100% free local models like Ollama).
+</details>
+
+<details>
+<summary><strong>2. Can Claude Code still read files, edit code, and run tests?</strong></summary>
+
+**Yes!** ClaudeGate translates all of Claude Code's tool definitions into standard OpenAI function calls and translates the results back. File reading, editing, terminal command execution, and search work just like native Claude.
+</details>
+
+<details>
+<summary><strong>3. How do I run 100% free and offline?</strong></summary>
+
+Install [Ollama](https://ollama.com), pull a coding model (e.g., `ollama run qwen2.5-coder:32b` or `deepseek-r1`), and run:
 ```bash
-python start_proxy.py --test
+python start_proxy.py --preset ollama
+python start_proxy.py
 ```
-*Output:*
-```text
-🔍 Testing upstream connection...
-   Provider Base URL: https://openrouter.ai/api/v1
-   Test Model:        stealth/ox-alpha
-✅ Connection Successful! Model is active and responsive.
-   Status: 200 OK
-```
+No API keys needed, zero dollars spent, and zero data leaves your computer.
+</details>
 
-### 2. Multi-Provider Fallback Verification
-Simulate an upstream outage to test automatic failover:
-```bash
-python scripts/verify_failover.py
-```
+<details>
+<summary><strong>4. How do I switch to a different model?</strong></summary>
 
-### 3. Automated Pytest Suite
-Run the full test suite covering non-streaming failover, SSE streaming, and endpoint security:
-```bash
-pytest tests/ -v
-```
+Run `python start_proxy.py --preset <name>` (e.g. `deepseek`, `gemini`, `groq`) or run `python start_proxy.py --setup`. Then start the proxy with `python start_proxy.py`.
+</details>
+
+<details>
+<summary><strong>5. How do I check if my setup is working properly?</strong></summary>
+
+Run `python start_proxy.py --test`. It sends a test ping to your configured AI provider and reports whether the model responded with `200 OK`.
+</details>
 
 ---
 
-## 🔒 10. Security & Privacy Safeguards
+## 🤝 Contributing & Community
 
-ClaudeGate implements defense-in-depth privacy controls to ensure secure self-hosting:
-
-- **Localhost-Only Default (`127.0.0.1`)**: Restricts incoming traffic exclusively to the local machine.
-- **Constant-Time Authentication**: Uses Python's `hmac.compare_digest` to validate `x-api-key` headers, preventing side-channel timing analysis.
-- **Secret & PII Redaction Engine**: When `SANITIZE_SECRETS="true"`, prompts are automatically scrubbed for sensitive tokens (GitHub PATs, AWS Access Keys, OpenAI Keys, Private SSH keys) before reaching upstream providers.
-- **Vulnerability Reporting**: For responsible disclosure, please refer to our [Security Policy](SECURITY.md).
+Contributions, issues, and feature requests are very welcome!
+- Check out [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+- Review our [Code of Conduct](CODE_OF_CONDUCT.md).
+- To add a new provider preset, just create `presets/<provider_name>.env` and submit a PR!
 
 ---
 
-## 💡 11. Engineering Decisions
+## 📄 License
 
-1. **Error Markers over Generator Exceptions**:
-   - *Problem*: In Starlette / FastAPI, raising `HTTPException` inside an active `StreamingResponse` async generator after HTTP headers (`200 OK`) are flushed causes a fatal `RuntimeError: response already started` and terminates the ASGI worker.
-   - *Decision*: ClaudeGate's generator yields formatted `ERROR::<status>::<message>` tokens that the SSE converter catches and translates into standard Anthropic error events, keeping the worker process healthy.
-
-2. **Multi-Turn `<thinking>` Cleansing**:
-   - *Problem*: Reasoning models (like DeepSeek R1) output reasoning tokens. When Claude Code sends subsequent conversation turns containing these blocks in history, standard OpenAI endpoints reject the payload with `400 Bad Request`.
-   - *Decision*: The `request_converter` automatically identifies and filters `thinking` and `redacted_thinking` content blocks before dispatching to upstream providers.
-
-3. **Constant-Time Client Authentication**:
-   - *Problem*: Standard string comparisons (`key == expected`) are susceptible to side-channel timing attacks.
-   - *Decision*: Implemented `hmac.compare_digest` across all header validation points.
-
-4. **10-Minute TCP Keep-Alive (`timeout_keep_alive=600`)**:
-   - *Problem*: Node.js HTTP agents in Claude Code CLI drop connections with `ECONNRESET` if an interactive user takes longer than 5 seconds between prompts.
-   - *Decision*: Configured explicit keep-alive headers and Uvicorn socket timeouts to support extended interactive developer pauses.
-
----
-
-## 🔮 12. Limitations and Future Improvements
-
-### Current Limitations
-- **Image Input Format**: Multimodal image support currently converts Base64 images directly; URLs require public accessibility.
-- **Provider-Specific Parameters**: Non-standard hyperparameters outside temperature and top_p are passed as standard OpenAI extensions.
-
-### Roadmap & Future Improvements
-- [ ] **Real-Time Web Dashboard**: Built-in visual UI (`http://127.0.0.1:8082/dashboard`) for live latency charts, token velocity, and cost tracking.
-- [ ] **Prompt Cache & SQLite Deduplication**: In-memory and SQLite KV caching for repetitive codebase index prompts.
-- [ ] **Dynamic Complexity Router**: Automatic classification of task difficulty (e.g. routing simple edits to Groq and complex architectural refactors to DeepSeek R1).
-- [ ] **Unix Domain Sockets (UDS)**: Zero-network communication option over `/run/user/$UID/claudegate.sock`.
-
----
-
-## 🤝 13. Contributing & Code of Conduct
-
-We welcome bug fixes, documentation improvements, new provider presets, and feature additions!
-
-- **Contributing Guide**: Check out [CONTRIBUTING.md](CONTRIBUTING.md) for local environment setup and PR workflows.
-- **Code of Conduct**: This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md).
-- **Adding Presets**: To contribute a new preset, add `presets/<provider_name>.env` and submit a pull request!
-
----
-
-## 📄 14. License
-
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
-
----
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 <p align="center">
-  <img src="./assets/ClaudeGate.png" alt="ClaudeGate Footer" width="160" style="border-radius: 12px;">
+  <img src="./assets/ClaudeGate.png" alt="ClaudeGate Footer" width="140" style="border-radius: 12px;">
 </p>
 
 <p align="center">
-  <strong>Built with ❤️ for the open-source & AI developer community.</strong><br>
-  <em>Empowering developers to run Claude Code with any model, anywhere, completely unrestricted.</em>
-</p>
-
-<p align="center">
-  ⭐ <strong>If you find ClaudeGate useful, consider giving it a star on GitHub!</strong> ⭐
+  <strong>Made with ❤️ for developers who love Claude Code and want freedom of choice.</strong><br>
+  ⭐ <em>If ClaudeGate helps your coding workflow, please give it a star on GitHub!</em> ⭐
 </p>
