@@ -5,6 +5,7 @@ from src.core.constants import Constants
 from src.models.claude import ClaudeMessagesRequest, ClaudeMessage
 from src.core.config import config
 from src.security.sanitizer import sanitizer
+from src.conversion.schema_sanitizer import sanitize_tool_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -148,13 +149,14 @@ def convert_claude_to_openai(
         openai_tools = []
         for tool in claude_request.tools:
             if tool.name and tool.name.strip():
+                sanitized_schema = sanitize_tool_parameters(tool.input_schema)
                 openai_tools.append(
                     {
                         "type": Constants.TOOL_FUNCTION,
                         Constants.TOOL_FUNCTION: {
                             "name": tool.name,
                             "description": tool.description or "",
-                            "parameters": tool.input_schema,
+                            "parameters": sanitized_schema,
                         },
                     }
                 )
