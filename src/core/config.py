@@ -30,7 +30,10 @@ def _bool_env(name: str, default: bool = False) -> bool:
 
 class Config:
     def __init__(self, require_api_key: bool = True):
-        self.openai_api_key = os.environ.get("OPENAI_API_KEY")
+        # Multi-Key support (comma-separated list for round-robin & 429 failover)
+        raw_keys = os.environ.get("OPENAI_API_KEY", "")
+        self.openai_api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+        self.openai_api_key = self.openai_api_keys[0] if self.openai_api_keys else None
         if require_api_key and not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY is required for runtime commands")
 
@@ -51,19 +54,40 @@ class Config:
         if self.min_tokens_limit > self.max_tokens_limit:
             raise ValueError("MIN_TOKENS_LIMIT must be <= MAX_TOKENS_LIMIT")
 
-        # Connection settings
+        # Connection & Streaming settings
         self.request_timeout = _int_env("REQUEST_TIMEOUT", 90, 1)
         self.max_retries = _int_env("MAX_RETRIES", 2, 0)
+        self.heartbeat_interval = _int_env("HEARTBEAT_INTERVAL", 15, 1)
+
+        # Context Overflow Guard settings
+        self.context_guard_enabled = _bool_env("CONTEXT_GUARD_ENABLED", True)
+        self.max_context_tokens = _int_env("MAX_CONTEXT_TOKENS", 100000, 1000)
+
+        # Vision Fallback
+        self.vision_fallback_model = os.environ.get("VISION_FALLBACK_MODEL", "gpt-4o-mini")
         
-        # Model settings - BIG and SMALL models
+        # Model settings - BIG, MIDDLE, and SMALL models
         self.big_model = os.environ.get("BIG_MODEL", "gpt-4o")
         self.middle_model = os.environ.get("MIDDLE_MODEL", self.big_model)
         self.small_model = os.environ.get("SMALL_MODEL", "gpt-4o-mini")
+
+        # Per-Tier Endpoints & Keys (falls back to global OPENAI_BASE_URL / OPENAI_API_KEY)
+        self.big_model_base_url = os.environ.get("BIG_MODEL_BASE_URL", self.openai_base_url)
+        self.big_model_api_key = os.environ.get("BIG_MODEL_API_KEY", self.openai_api_key)
+        self.middle_model_base_url = os.environ.get("MIDDLE_MODEL_BASE_URL", self.openai_base_url)
+        self.middle_model_api_key = os.environ.get("MIDDLE_MODEL_API_KEY", self.openai_api_key)
+        self.small_model_base_url = os.environ.get("SMALL_MODEL_BASE_URL", self.openai_base_url)
+        self.small_model_api_key = os.environ.get("SMALL_MODEL_API_KEY", self.openai_api_key)
 
         # Fallback provider configuration (automatic failover on 503/429/timeouts)
         self.fallback_base_url = os.environ.get("FALLBACK_BASE_URL")
         self.fallback_api_key = os.environ.get("FALLBACK_API_KEY", self.openai_api_key)
         self.fallback_model = os.environ.get("FALLBACK_MODEL")
+
+        # Circuit Breaker Configuration (fast failover without waiting on retry loops during outages)
+        self.circuit_breaker_enabled = _bool_env("CIRCUIT_BREAKER_ENABLED", True)
+        self.circuit_breaker_threshold = _int_env("CIRCUIT_BREAKER_THRESHOLD", 3, 1)
+        self.circuit_breaker_reset_timeout = _int_env("CIRCUIT_BREAKER_RESET_TIMEOUT", 60, 1)
 
         # Security & Traffic Controls
         self.allow_anonymous_access = _bool_env("ALLOW_ANONYMOUS_ACCESS", False)

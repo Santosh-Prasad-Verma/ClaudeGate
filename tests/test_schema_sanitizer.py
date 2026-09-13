@@ -1,8 +1,6 @@
-import pytest
 from src.conversion.schema_sanitizer import (
     sanitize_tool_parameters,
     sanitize_schema_node,
-    inline_and_resolve_refs,
 )
 from src.models.claude import ClaudeMessagesRequest, ClaudeMessage, ClaudeTool
 from src.conversion.request_converter import convert_claude_to_openai

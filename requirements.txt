@@ -5,3 +5,5 @@ pydantic>=2.10.0
 openai>=1.60.0
 python-dotenv>=1.0.0
 httpx>=0.28.0
+setuptools>=75.8.0
+msgpack>=1.1.0

@@ -5,9 +5,114 @@ import sys
 import shutil
 import argparse
 import asyncio
+import time
 import re
 import httpx
 from src.core.constants import BANNER
+
+
+async def run_doctor() -> None:
+    """Run comprehensive environment, local provider, and upstream capability diagnostics."""
+    print_banner()
+    print("\033[1mClaudeGate System & Model Doctor\033[0m\n")
+    from src.core.config import get_config
+    config = get_config()
+
+    # 1. Environment & Configuration
+    print("\033[94m[1/4] Environment & Configuration\033[0m")
+    print(f"   • Python Version:    {sys.version.split()[0]}")
+    print(f"   • Listen Interface:  http://{config.host}:{config.port}")
+    print(f"   • Upstream URL:      {config.openai_base_url}")
+    print(f"   • Upstream API Key:  {'[CONFIGURED]' if config.openai_api_key else '[MISSING]'}")
+    print(f"   • Client API Key:    {'[CONFIGURED]' if config.anthropic_api_key else '[DISABLED/NONE]'}")
+    print(f"   • Tier Models:       Big={config.big_model} | Mid={config.middle_model} | Small={config.small_model}")
+    print(f"   • Fallback Endpoint: {config.fallback_base_url or 'None'} (Model: {config.fallback_model or 'None'})")
+    print(f"   • Circuit Breaker:   {'Enabled (Threshold: ' + str(config.circuit_breaker_threshold) + ')' if config.circuit_breaker_enabled else 'Disabled'}")
+
+    # 2. Local AI Engine Discovery
+    print("\n\033[94m[2/4] Scanning Local AI Engines\033[0m")
+    local_ports = [
+        ("Ollama", "http://127.0.0.1:11434/api/tags"),
+        ("LM Studio", "http://127.0.0.1:1234/v1/models"),
+        ("vLLM / LocalAI", "http://127.0.0.1:8000/v1/models"),
+    ]
+    async with httpx.AsyncClient(timeout=1.5) as client:
+        for engine, url in local_ports:
+            try:
+                res = await client.get(url)
+                if res.status_code in (200, 401):
+                    print(f"   \033[92m●\033[0m {engine}: ONLINE at {url.split('/')[2]}")
+                else:
+                    print(f"   \033[90m○\033[0m {engine}: Offline")
+            except Exception:
+                print(f"   \033[90m○\033[0m {engine}: Offline")
+
+    # 3. Upstream Ping & Latency
+    print("\n\033[94m[3/4] Testing Upstream Connection & Latency\033[0m")
+    ping_url = f"{config.openai_base_url.rstrip('/')}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {config.openai_api_key}",
+        "Content-Type": "application/json",
+    }
+    ping_payload = {
+        "model": config.small_model,
+        "messages": [{"role": "user", "content": "Ping"}],
+        "max_tokens": 5,
+    }
+    t0 = time.time()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(ping_url, headers=headers, json=ping_payload)
+            lat = round((time.time() - t0) * 1000, 1)
+            if resp.status_code == 200:
+                print(f"   \033[92m[OK] Connection OK\033[0m — Latency: {lat} ms")
+            else:
+                print(f"   \033[91m[FAIL] Upstream returned HTTP {resp.status_code}\033[0m: {resp.text[:200]}")
+    except Exception as e:
+        print(f"   \033[91m[FAIL] Failed to reach upstream: {e}\033[0m")
+
+    # 4. Tool Calling Capability Validation
+    print("\n\033[94m[4/4] Validating Function/Tool Calling Capability\033[0m")
+    tool_payload = {
+        "model": config.middle_model,
+        "messages": [{"role": "user", "content": "What is 42 plus 58? Call the add tool."}],
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "add",
+                    "description": "Add two numbers",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "a": {"type": "number"},
+                            "b": {"type": "number"},
+                        },
+                        "required": ["a", "b"],
+                    },
+                },
+            }
+        ],
+        "max_tokens": 150,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            tool_resp = await client.post(ping_url, headers=headers, json=tool_payload)
+            if tool_resp.status_code == 200:
+                data = tool_resp.json()
+                msg = data.get("choices", [{}])[0].get("message", {})
+                if msg.get("tool_calls"):
+                    fn_name = msg["tool_calls"][0].get("function", {}).get("name")
+                    fn_args = msg["tool_calls"][0].get("function", {}).get("arguments")
+                    print(f"   \033[92m[OK] Tool Calling Supported!\033[0m (Invoked: {fn_name} with {fn_args})")
+                else:
+                    print("   \033[93m[WARN] Model returned text instead of calling tool. Verify function calling support for this model.\033[0m")
+            else:
+                print(f"   \033[91m[FAIL] Upstream tool probe returned HTTP {tool_resp.status_code}\033[0m: {tool_resp.text[:150]}")
+    except Exception as e:
+        print(f"   \033[91m[FAIL] Tool probe failed: {e}\033[0m")
+
+    print("\nDiagnostic complete.\n")
 
 
 def get_server_dir() -> str:
@@ -22,7 +127,7 @@ async def test_upstream_connection() -> bool:
     """Test connectivity to the configured upstream provider."""
     from src.core.config import get_config
     config = get_config()
-    print("\n🔍 Testing upstream connection...")
+    print("\nTesting upstream connection...")
     print(f"   Provider Base URL: {config.openai_base_url}")
     print(f"   Test Model:        {config.small_model}")
     
@@ -43,16 +148,35 @@ async def test_upstream_connection() -> bool:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(url, headers=headers, json=payload)
             if response.status_code == 200:
-                print("\033[92m✅ Connection Successful! Model is active and responsive.\033[0m")
+                print("\033[92m[OK] Connection Successful! Model is active and responsive.\033[0m")
                 print(f"   Status: {response.status_code} OK")
                 return True
             else:
-                print(f"\033[91m❌ Upstream returned HTTP {response.status_code}:\033[0m")
+                print(f"\033[91m[FAIL] Upstream returned HTTP {response.status_code}:\033[0m")
                 print(f"   {response.text[:300]}")
                 return False
     except Exception as e:
-        print(f"\033[91m❌ Failed to connect to upstream: {e}\033[0m")
+        print(f"\033[91m[FAIL] Failed to connect to upstream: {e}\033[0m")
         return False
+
+def _write_secure_env_file(path: str, data: str) -> None:
+    """Atomically write file with strictly restricted owner-only (0600) permissions."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    mode = 0o600
+    try:
+        fd = os.open(path, flags, mode)
+        with open(fd, "w", encoding="utf-8") as f:
+            f.write(data)
+        os.chmod(path, mode)
+    except OSError:
+        # Fallback if os.open flags fail on non-POSIX filesystems
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(data)
+        try:
+            os.chmod(path, mode)
+        except OSError:
+            pass
+
 
 def sanitize_env_value(val: str) -> str:
     """Sanitize user input to prevent environment variable and INI file injection."""
@@ -64,7 +188,7 @@ def sanitize_env_value(val: str) -> str:
 def run_interactive_setup() -> None:
     """Interactive wizard to configure ClaudeGate."""
     print_banner()
-    print("🛠️  ClaudeGate Universal Setup Wizard\n")
+    print("ClaudeGate Universal Setup Wizard\n")
     
     presets = {
         "1":  ("OpenRouter (Claude Opus 5, Sonnet 5, Haiku 4.5 / DeepSeek V4)", "openrouter.env"),
@@ -112,9 +236,9 @@ def run_interactive_setup() -> None:
                 os.chmod(target_env, 0o600)
             except OSError:
                 pass  # Best-effort file permission hardening; unsupported on some filesystems
-            print(f"\n✅ Applied preset: {preset_file}")
+            print(f"\n[OK] Applied preset: {preset_file}")
         else:
-            print(f"❌ Preset file {preset_file} not found.")
+            print(f"[ERROR] Preset file {preset_file} not found.")
             return
             
         # If not purely local, prompt for API key
@@ -137,13 +261,8 @@ def run_interactive_setup() -> None:
                 ]:
                     content = content.replace(placeholder, api_key)
                 content = content.replace('OPENAI_API_KEY="your-api-key-here"', f'OPENAI_API_KEY="{api_key}"')
-                with open(target_env, "w", encoding="utf-8") as f:
-                    f.write(content)
-                try:
-                    os.chmod(target_env, 0o600)
-                except OSError:
-                    pass  # Best-effort file permission hardening; unsupported on some filesystems
-                print("✅ API key successfully configured in .env.")
+                _write_secure_env_file(target_env, content)
+                print("[OK] API key successfully configured in .env.")
     else:
         # Manual flow with input sanitization
         api_key = sanitize_env_value(input("Upstream API Key: ").strip())
@@ -168,15 +287,10 @@ RATE_LIMIT_PER_MINUTE="120"
 MAX_CONCURRENT_REQUESTS="30"
 ALLOW_ANONYMOUS_ACCESS="false"
 """
-        with open(target_env, "w", encoding="utf-8") as f:
-            f.write(env_content)
-        try:
-            os.chmod(target_env, 0o600)
-        except OSError:
-            pass  # Best-effort file permission hardening; unsupported on some filesystems
-        print("✅ Custom configuration saved to .env.")
+        _write_secure_env_file(target_env, env_content)
+        print("[OK] Custom configuration saved to .env.")
 
-    print("\n🎉 Setup complete! You can test your connection with:\n   python start_proxy.py --test\n")
+    print("\nSetup complete! You can test your connection with:\n   python start_proxy.py --test\n")
 
 def apply_preset(preset_name: str) -> None:
     """Apply a preset by name with path traversal protection."""
@@ -194,10 +308,10 @@ def apply_preset(preset_name: str) -> None:
             os.chmod(target_env, 0o600)
         except OSError:
             pass  # Best-effort file permission hardening; unsupported on some filesystems
-        print(f"✅ Loaded preset '{safe_name}' into .env.")
-        print("👉 Remember to edit .env and insert your API key if required.")
+        print(f"[OK] Loaded preset '{safe_name}' into .env.")
+        print("Note: Remember to edit .env and insert your API key if required.")
     else:
-        print(f"❌ Preset '{safe_name}' not found. Available presets:")
+        print(f"[ERROR] Preset '{safe_name}' not found. Available presets:")
         if os.path.exists(presets_dir):
             for p in sorted(os.listdir(presets_dir)):
                 if p.endswith(".env"):
@@ -211,6 +325,7 @@ def cli_main() -> None:
     )
     parser.add_argument("--setup", action="store_true", help="Launch interactive configuration wizard")
     parser.add_argument("--test", action="store_true", help="Test connectivity to upstream LLM")
+    parser.add_argument("--doctor", action="store_true", help="Run comprehensive system & model capability diagnostics")
     parser.add_argument("--preset", type=str, help="Apply a predefined preset (e.g., groq, gemini, ollama, deepseek, etc.)")
     parser.add_argument("--version", action="version", version="ClaudeGate v1.0.0")
 
@@ -221,6 +336,9 @@ def cli_main() -> None:
         sys.exit(0)
     elif args.test:
         sys.exit(0 if asyncio.run(test_upstream_connection()) else 1)
+    elif args.doctor:
+        asyncio.run(run_doctor())
+        sys.exit(0)
     elif args.preset:
         apply_preset(args.preset)
         sys.exit(0)

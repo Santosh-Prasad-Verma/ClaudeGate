@@ -10,6 +10,8 @@ class Constants:
     CONTENT_TOOL_USE = "tool_use"
     CONTENT_TOOL_RESULT = "tool_result"
     
+    CONTENT_THINKING = "thinking"
+    
     TOOL_FUNCTION = "function"
     
     STOP_END_TURN = "end_turn"
@@ -27,6 +29,7 @@ class Constants:
     
     DELTA_TEXT = "text_delta"
     DELTA_INPUT_JSON = "input_json_delta"
+    DELTA_THINKING = "thinking_delta"
 
 
 BANNER = r"""
@@ -36,6 +39,5 @@ BANNER = r"""
  | |    | |/ _` | | | |/ _` |/ _ \ | |_ |/ _` | __/ _ \
  | |____| | (_| | |_| | (_| |  __/ |__| | (_| | ||  __/
   \_____|_|\__,_|\__,_|\__,_|\___|\_____|\__,_|\__\___|
-                                                       
-  🔓 Connect Any AI Model to Claude Code CLI / Anthropic SDK
+   Connect Any AI Model to Claude Code CLI / Anthropic SDK
 """

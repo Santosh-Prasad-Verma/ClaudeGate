@@ -33,6 +33,7 @@ def main():
         print("Options:")
         print("  --setup              Launch interactive configuration wizard")
         print("  --test               Test connectivity with upstream LLM")
+        print("  --doctor             Run comprehensive system & model capability diagnostics")
         print("  --preset <NAME>      Quick-load provider preset (openrouter, groq, ollama, deepseek, openai, azure)")
         print("  --version            Show version")
         print("  --help               Show this help message")
@@ -43,6 +44,7 @@ def main():
         print(f"  Middle Model(sonnet):{config.middle_model}")
         print(f"  Small Model (haiku): {config.small_model}")
         print(f"  Listen Address:      {config.host}:{config.port}")
+        print(f"  Live Console UI:     http://{config.host}:{config.port}/dashboard")
         sys.exit(0)
 
     # Configuration summary
@@ -53,6 +55,7 @@ def main():
     print(f"  \033[92m●\033[0m Small Model (haiku): {config.small_model}")
     print(f"  \033[92m●\033[0m Max Tokens:          {config.max_tokens_limit}")
     print(f"  \033[92m●\033[0m Gateway Server:      http://{config.host}:{config.port}")
+    print(f"  \033[92m●\033[0m Live Dashboard:      http://{config.host}:{config.port}/dashboard")
     print(f"  \033[92m●\033[0m Client Key Auth:     {'Enabled' if config.anthropic_api_key else 'Disabled'}")
     print("")
 

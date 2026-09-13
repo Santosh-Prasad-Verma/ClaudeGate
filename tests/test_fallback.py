@@ -35,6 +35,7 @@ def test_non_streaming_fallback_when_primary_fails():
             "usage": {"prompt_tokens": 10, "completion_tokens": 5}
         }
         mock_fallback_create = AsyncMock(return_value=expected_response)
+        assert client.fallback_client is not None
         client.fallback_client.chat.completions.create = mock_fallback_create
         
         # 4. Execute request
@@ -98,6 +99,7 @@ def test_streaming_fallback_when_primary_fails():
             yield MockChunk("from fallback!")
         
         mock_fallback_create = AsyncMock(return_value=mock_fallback_stream_generator())
+        assert client.fallback_client is not None
         client.fallback_client.chat.completions.create = mock_fallback_create
         
         # 4. Consume stream generator

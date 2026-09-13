@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Dict, Any, Optional, Union, Literal
+from typing import List, Dict, Any, Optional, Union
 
 class ClaudeContentBlockText(BaseModel):
     model_config = ConfigDict(extra="ignore")

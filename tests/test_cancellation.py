@@ -38,7 +38,7 @@ def test_non_streaming_explicit_cancellation():
         assert cancelled is True
 
         with pytest.raises(HTTPException) as exc_info:
-            await task
+            _ = await task
 
         assert exc_info.value.status_code == 499
         assert "Request cancelled by client" in exc_info.value.detail
@@ -76,7 +76,7 @@ def test_non_streaming_external_task_cancellation():
         task.cancel()
 
         with pytest.raises(asyncio.CancelledError):
-            await task
+            _ = await task
 
         # Ensure active_requests cleaned up
         assert request_id not in client.active_requests
