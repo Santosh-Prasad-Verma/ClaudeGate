@@ -303,23 +303,5 @@ This project is licensed under the **[MIT License](LICENSE)** — open and free 
   <p>
     <sub>If ClaudeGate helps your coding workflow, consider starring the repo on GitHub!</sub>
   </p>
-
-  <br>
-
-  <a href="https://github.com/Santosh-Prasad-Verma/ClaudeGate">
-    <img src="https://img.shields.io/github/stars/Santosh-Prasad-Verma/ClaudeGate?style=social" alt="GitHub Stars">
-  </a>
-  &nbsp;
-  <a href="https://github.com/Santosh-Prasad-Verma/ClaudeGate/fork">
-    <img src="https://img.shields.io/github/forks/Santosh-Prasad-Verma/ClaudeGate?style=social" alt="GitHub Forks">
-  </a>
-  &nbsp;
-  <a href="https://github.com/Santosh-Prasad-Verma/ClaudeGate/issues">
-    <img src="https://img.shields.io/github/issues/Santosh-Prasad-Verma/ClaudeGate?style=flat-square" alt="Issues">
-  </a>
-  &nbsp;
-  <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-3b82f6.svg?style=flat-square" alt="MIT License">
-  </a>
 </div>
 
