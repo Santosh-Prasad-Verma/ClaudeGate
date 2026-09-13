@@ -6,7 +6,7 @@ into clean, OpenAPI 3.0 / Gemini-compatible schema definitions.
 
 import copy
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 

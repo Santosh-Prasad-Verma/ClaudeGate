@@ -59,6 +59,7 @@ async def run_failover_simulation():
     mock_obj = MagicMock()
     mock_obj.model_dump.return_value = expected_fallback_output
     mock_fallback_success.return_value = mock_obj
+    assert client.fallback_client is not None
     client.fallback_client.chat.completions.create = mock_fallback_success
 
     # 4. Execute request with immediate sleep
