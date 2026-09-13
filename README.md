@@ -289,8 +289,37 @@ Run `python start_proxy.py --preset <name>` (e.g. `deepseek`, `gemini`, `groq`),
 
 ## License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+This project is licensed under the **[MIT License](LICENSE)** — open and free for both personal and commercial use.
 
-<p align="center">
-  <strong>Made for developers who love CLI coding agents and want complete freedom of choice.</strong>
-</p>
+<br>
+
+<div align="center">
+  <img src="./assets/ClaudeGate.png" alt="ClaudeGate" width="110" style="border-radius: 14px;">
+  
+  <p style="margin-top: 12px; font-size: 15px;">
+    <strong>Built for developers who love CLI coding agents and demand complete freedom of choice.</strong>
+  </p>
+
+  <p>
+    <sub>If ClaudeGate helps your coding workflow, consider starring the repo on GitHub!</sub>
+  </p>
+
+  <br>
+
+  <a href="https://github.com/Santosh-Prasad-Verma/ClaudeGate">
+    <img src="https://img.shields.io/github/stars/Santosh-Prasad-Verma/ClaudeGate?style=social" alt="GitHub Stars">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Santosh-Prasad-Verma/ClaudeGate/fork">
+    <img src="https://img.shields.io/github/forks/Santosh-Prasad-Verma/ClaudeGate?style=social" alt="GitHub Forks">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Santosh-Prasad-Verma/ClaudeGate/issues">
+    <img src="https://img.shields.io/github/issues/Santosh-Prasad-Verma/ClaudeGate?style=flat-square" alt="Issues">
+  </a>
+  &nbsp;
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-3b82f6.svg?style=flat-square" alt="MIT License">
+  </a>
+</div>
+
